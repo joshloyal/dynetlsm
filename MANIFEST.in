@@ -1,0 +1,7 @@
+include *.rst
+recursive-include doc *
+recursive-include examples *
+recursive-include dynetlsm/datasets *.csv
+include README.rst
+include requirements.txt
+include test_requirements.txt

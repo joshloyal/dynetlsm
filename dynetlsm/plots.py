@@ -4,6 +4,7 @@ import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
+import pandas as pd
 import scipy.linalg as linalg
 import scipy.sparse as sp
 import scipy.cluster.hierarchy as hc
@@ -32,7 +33,7 @@ __all__ = ['plot_network_pyvis',
            'plot_traces_lsm',
            'plot_traces_lpcm',
            'plot_poserior_counts',
-           'plot_model_parameters',
+           'plot_transition_probabilities',
            'plot_adjacency_matrix',
            'alluvial_plot']
 
@@ -382,7 +383,7 @@ def plot_traces_hdp_lpcm(model, figsize=(10, 12), maxlags=100, fontsize=8):
     return fig, ax
 
 
-def plot_posterior_counts(model, t=0, bar_width=0.25, normalize=False,
+def plot_posterior_counts(model, t=0, bar_width=0.25, normalize=True,
                          fontsize=16, ticksize=14, figsize=(10, 6),
                          include_title=True):
     fig, ax = plt.subplots(figsize=figsize)
@@ -412,10 +413,9 @@ def plot_posterior_counts(model, t=0, bar_width=0.25, normalize=False,
     return fig, ax
 
 
-def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
-                          param_fontsize=8, zero_threshold=1e-3,
-                          include_likelihood_params=True,
-                          text_map=None):
+def plot_transition_probabilities(model, figsize=(10, 8), fontsize=8,
+                                  param_fontsize=8, zero_threshold=1e-3,
+                                  text_map=None):
     n_time_steps = model.Y_fit_.shape[0]
 
     fig = plt.figure(figsize=figsize)
@@ -436,29 +436,7 @@ def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
             [l.set_fontsize(fontsize) for l in a.get_yticklabels()]
             [l.set_fontsize(fontsize) for l in a.get_xticklabels()]
 
-    if include_likelihood_params:
-        # plot parameters
-        ax[0, 0].annotate(r'$\lambda =$ {:.2f}'.format(model.lambda_[0]),
-                          (0.6, 0.3), fontsize=12)
-
-        if model.is_directed:
-            ax[0, 0].annotate(
-                r'$\beta_{in} =$' + ' {:.2f}'.format(model.intercept_[0]),
-                (0.6, 0.9), fontsize=12)
-            ax[0, 0].annotate(
-                r'$\beta_{out} =$' + ' {:.2f}'.format(model.intercept_[1]),
-                (0.6, 0.6), fontsize=12)
-        else:
-            ax[0, 0].annotate(
-                r'$\beta_0 =$ {:.2f}'.format(model.intercept_[0]),
-                (0.5, 0.6), fontsize=12)
-        ax[0, 0].annotate(
-            r'AUC = {:.2f}'.format(model.auc_),
-            (0, 0.6), fontsize=12)
-
-        ax[0, 0].axis('off')
-
-    param_start = 1 if include_likelihood_params else 0
+    param_start = 0
 
     # beta plot
     beta = model.beta_.reshape(1, -1).copy()
@@ -483,7 +461,7 @@ def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
                 xticklabels=text_map if text_map else 'auto')
     ax[0, param_start + 1].set_title(r'$p(z_0)$')
 
-    if not include_likelihood_params and ncols == 3:
+    if ncols == 3:
         ax[0, 2].axis('off')
 
     # plot remaining transition weights
@@ -539,15 +517,15 @@ def arrow_patch(x1, x2, source_size, target_size, ax, **kwargs):
 
 
 def plot_network_embedding(model, t=0, estimate_type='best',
-                           only_show_connected=False,
+                           only_show_connected=True,
                            figsize=(10, 6), border=0.1,
-                           head_width=0.003, linewidth=0.001, text_map=None,
-                           node_size=40, center_size=300,
+                           head_width=0.003, linewidth=0.5, text_map=None,
+                           node_size=100, center_size=300,
                            alpha=0.8, title_text='auto',
-                           arrowstyle='-|>', connectionstyle=None,
-                           mutation_scale=10, number_nodes=False,
+                           arrowstyle='-|>', connectionstyle='arc3,rad=0.2',
+                           mutation_scale=30, number_nodes=True,
                            group_title_offset=0, textsize=10, size_cutoff=1,
-                           plot_group_sigma=False, mask_groups=None,
+                           plot_group_sigma=True, mask_groups=None,
                            node_names=None, use_radii=True,
                            node_textsize=10, repel_strength=0.5,
                            group_id=None, colors=None, sample_id=None):
@@ -695,7 +673,7 @@ def plot_network_embedding(model, t=0, estimate_type='best',
                                zorder=1)
 
     if title_text == 'auto':
-        ax.set_title('t = {}'.format(t + 1), size=80)
+        ax.set_title('t = {}'.format(t + 1), size=18)
     elif title_text:
         ax.set_title(title_text)
 
@@ -829,9 +807,10 @@ def alluvial_plot(z, figsize=(10, 6), margin=0.01, rec_width=0.01, alpha=0.5,
     return fig, ax
 
 
-def plot_posterior_cooccurrence(model, t=0, label_type='map', threshold=0.5,
-                                colors=None, cmap='rocket',
-                                mask_threshold=None, sample_id=None):
+def plot_posterior_cooccurrence(model, t=0, title='auto', label_type='map',
+                                threshold=0.5, colors=None, cmap='rocket',
+                                names=None, mask_threshold=None,
+                                sample_id=None):
 
     # calculate coocurrence probabilities
     cooccurence_proba = model.cooccurrence_probas_[t]
@@ -848,6 +827,10 @@ def plot_posterior_cooccurrence(model, t=0, label_type='map', threshold=0.5,
         else:
             z = model.zs_[sample_id, t]
 
+    if names is not None:
+        cooccurence_proba = pd.DataFrame(
+            cooccurence_proba, columns=names, index=names)
+
     encoder = LabelEncoder().fit(z)
     colors = get_colors(z) if colors is None else colors
 
@@ -860,9 +843,13 @@ def plot_posterior_cooccurrence(model, t=0, label_type='map', threshold=0.5,
                         mask=mask)
 
     # remove redundant side dendogram
-    cg.ax_row_dendrogram.set_visible(False)
+    cg.ax_col_dendrogram.set_visible(False)
 
-    return z
+    title = 't = {}'.format(t) if title == 'auto' else title
+    if title is not None:
+        cg.fig.suptitle(title, size=18)
+
+    return cg
 
 
 def plot_adjacency_matrix(Y, z, figsize=(8, 6)):

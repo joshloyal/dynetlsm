@@ -1,12 +1,9 @@
 import numbers
 import itertools
 
-import arviz as az
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import numpy as np
 import networkx as nx
-import pyvis.network as pyvis
 import scipy.linalg as linalg
 import scipy.sparse as sp
 import scipy.cluster.hierarchy as hc
@@ -17,41 +14,25 @@ from matplotlib.colors import to_hex
 from matplotlib.patches import Ellipse, Rectangle, FancyArrowPatch
 from matplotlib.ticker import MaxNLocator
 
-from scipy.special import expit
 from scipy.interpolate import CubicSpline
 from scipy.spatial.distance import squareform
 
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import (
-    pairwise_distances, roc_auc_score, adjusted_rand_score)
 
-
-from .latent_space import calculate_distances
-from .metrics import network_auc
-from .array_utils import triu_indices_from_3d, nondiag_indices_from
-from .network_likelihoods import directed_network_probas
+from .array_utils import nondiag_indices_from
 from .trace_utils import effective_n
-from .model_selection.approx_bic import calculate_cluster_counts
-from .model_selection.approx_bic import calculate_cluster_counts_t
 from .network_statistics import connected_nodes
 from .text_utils import repel_labels
 
 
-__all__ = ['animate_latent_space',
-           'animate_dynamic_graph',
-           'draw_arrow',
-           'plot_network_pyvis',
+__all__ = ['plot_network_pyvis',
            'plot_network_embedding',
-           'plot_group_embedding',
-           'plot_trajectories',
-           'plot_latent_space',
            'plot_probability_matrix',
-           'plot_traces',
+           'plot_traces_lsm',
+           'plot_traces_lpcm',
            'plot_poserior_counts',
-           'plot_model_selection',
            'plot_model_parameters',
-           'plot_distance_comparison',
            'plot_adjacency_matrix',
            'alluvial_plot']
 
@@ -120,151 +101,17 @@ def normal_contour(mean, cov, n_std=2, ax=None, animated=False, **kwargs):
     return ellipses
 
 
-def animate_latent_space(X, labels=None, centers=None, stds=None,
-                         radii=None,
-                         figsize=(8, 6), marker_size=50, border=0.1,
-                         interval=1000, square=True, **kwargs):
-    """Animate Latent Space."""
-    n_time_steps, n_nodes, _ = X.shape
-
-    fig, ax = plt.subplots(figsize=figsize)
-
-    scatter = ax.scatter([], [], edgecolors='w', s=marker_size, **kwargs)
-    scatter_centers = ax.scatter([], [], edgecolor='k', s=2 * marker_size,
-                                 marker='*', **kwargs)
-    if square:
-        ax.set_aspect('equal', 'box')
-
-    colors = get_colors(labels.ravel()) if labels is not None else None
-
-    if labels is None:
-        labels = np.zeros((n_time_steps, n_nodes), dtype=np.int)
-
-    has_centers = centers is not None
-    has_stds = stds is not None
-    if not has_centers:
-        centers = [None] * X.shape[0]
-    elif centers.ndim == 2:
-        centers = np.repeat(np.expand_dims(centers, axis=0), X.shape[0], axis=0)
-
-    if has_stds:
-        stds = [normal_contour((0, 0), std * np.eye(2), n_std=[1, 2],
-                               ax=ax, fill=None, visible=True,
-                               animated=False) for std in stds]
-
-    def init():
-        scatter.set_offsets([])
-
-        if has_centers:
-            scatter_centers.set_offsets([])
-
-        xy_min = np.min(X, axis=(0, 1)) - border
-        xy_max = np.max(X, axis=(0, 1)) + border
-
-        ax.set_xlim(xy_min[0], xy_max[0])
-        ax.set_ylim(xy_min[1], xy_max[1])
-
-        elements = [scatter]
-        if has_centers:
-            elements.append(scatter_centers)
-        if has_stds:
-            elements = elements + flatten(stds)
-
-        return elements
-
-    def frame_iter():
-        for t in range(X.shape[0]):
-            yield (t, X[t], labels[t], centers[t])
-
-    def animate(frames):
-        t, Xt, zt, mut = frames
-        scatter.set_offsets(Xt)
-        if radii is not None:
-            scatter.set_sizes(radii / radii.min() * 10)
-        scatter.set_color(colors[zt])
-        scatter.set_edgecolors('w')
-
-        if mut is not None:
-            center_ids = np.unique(zt)
-            scatter_centers.set_offsets(mut[center_ids])
-            scatter_centers.set_color(colors[center_ids])
-            scatter_centers.set_edgecolor('k')
-
-        if stds is not None:
-            center_ids = np.unique(zt)
-            for k, ellipses in enumerate(stds):
-                if k in center_ids:
-                    for e in ellipses:
-                        e.set_visible(True)
-                        e.set_center(mut[k])
-                        e.set_color(colors[k])
-                else:
-                    for e in ellipses:
-                        e.set_visible(False)
-
-        ax.set_title("t = {}".format(t + 1))
-
-        elements = [scatter]
-        if has_centers:
-            elements.append(scatter_centers)
-        if has_stds:
-            elements = elements + flatten(stds)
-
-        return elements
-
-    return animation.FuncAnimation(fig,
-                                   func=animate,
-                                   frames=frame_iter,
-                                   init_func=init,
-                                   interval=interval,
-                                   save_count=X.shape[0],
-                                   blit=True)
-
-
-def animate_dynamic_graph(Y, labels, is_directed=False, change_order=False,
-                          figsize=(6, 6),
-                          node_size=80, interval=1000):
-    """Animate Dynamic Network (Circular Layout)"""
-    fig, ax = plt.subplots(figsize=figsize)
-
-    order = np.argsort(labels[0])
-    G0 = nx.from_numpy_array(Y[0][order][:, order])
-    layout = nx.circular_layout(G0)
-    colors = get_color20()
-
-    def animate(t):
-        ax.clear()
-
-        if change_order:
-            order = np.argsort(labels[t])
-        else:
-            order = np.argsort(labels[0])
-
-        Gt = nx.from_numpy_array(Y[t][order][:, order])
-        zt = labels[t]
-        nx.draw(Gt,
-                pos=layout,
-                node_color=colors[zt[order]],
-                edge_color='gray',
-                edgecolors='white',
-                node_size=node_size,
-                ax=ax)
-
-        ax.set_title("t = {}".format(t + 1))
-
-    return animation.FuncAnimation(fig,
-                                   func=animate,
-                                   frames=Y.shape[0],
-                                   interval=interval,
-                                   save_count=Y.shape[0])
-
-
 def plot_network_pyvis(Y, labels=None, output_name='network_vis.html',
                        is_directed=False, in_notebook=False, names=None,
                        height="550px", width="100%", **kwargs):
     """Use the pyvis plotting library to display a network."""
     network = pyvis.Network(height=height, width=width, notebook=in_notebook,
                             directed=is_directed, **kwargs)
+
+    try:
+        import pyvis.network as pyvis
+    except ImportError:
+        raise ImportError("PyVis library necessary for this visualization.")
 
     # import graph
     if is_directed:
@@ -296,34 +143,6 @@ def plot_network_pyvis(Y, labels=None, output_name='network_vis.html',
 
     return network.show(output_name)
 
-def plot_latent_space(X, means=None, sigmas=None, labels=None, figsize=(10, 8)):
-    fig, ax = plt.subplots(figsize=figsize)
-
-    if labels is not None:
-        # filter for clusters with points actually assigned
-        unique_labels = np.unique(labels)
-        means = means[unique_labels]
-        sigmas = sigmas[unique_labels]
-
-        # transform labels to intergers 0-19
-        encoder = LabelEncoder().fit(labels)
-        z = encoder.transform(labels)
-
-        colors = get_color20()
-        ax.scatter(X[:, 0], X[:, 1], c=colors[z], edgecolor='k', alpha=0.8)
-
-        for k, cluster_id in enumerate(unique_labels):
-            ax.scatter(means[k, 0], means[k, 1], edgecolor='k', s=200,
-                       marker='*',
-                       color=colors[encoder.transform([cluster_id])])
-            normal_contour(means[k], sigmas[k] * np.eye(2),
-                           n_std=[1, 2], ax=ax, fill=None,
-                           color=colors[encoder.transform([cluster_id])[0]])
-    else:
-        ax.scatter(X[:, 0], X[:, 1], edgecolor='k', alpha=0.8)
-
-    return ax
-
 
 def plot_probability_matrix(probas, z, figsize=(10, 6),
                             is_adj=False,
@@ -338,30 +157,17 @@ def plot_probability_matrix(probas, z, figsize=(10, 6),
     order = np.argsort(z)
     probas = probas[order, :][:, order]
 
-    # mask upper diagonal for undirected graphs
-    mask = None
-    #if not is_directed:
-    #    mask = np.zeros_like(probas)
-    #    mask[np.triu_indices_from(mask)] = True
-
     with sns.axes_style('white'):
-        #ax.set_title('t = {}'.format(t+1))
-
-        sns.heatmap(probas, #cmap='rocket_r',
-                    cmap='Blues',mask=mask,
+        sns.heatmap(probas,
+                    cmap='Blues',
                     yticklabels=False, xticklabels=False,
                     vmin=0.0, vmax=1.0, ax=ax,
-                    #cbar_ax=plt.subplot(gs[nrows-1, :]),
                     cbar_kws={"orientation": "horizontal"})
-        #else:
-        #    sns.heatmap(probas[t], cmap='rocket_r', mask=mask,
-        #                yticklabels=False, xticklabels=False,
-        #                vmin=0.0, vmax=1.0, ax=ax, cbar=False)
 
     return fig, ax
 
 
-def plot_traces(model, figsize=(10, 6), maxlags=100, fontsize=8):
+def plot_traces_lsm(model, figsize=(10, 6), maxlags=100, fontsize=8):
     fig = plt.figure(figsize=figsize)
     colors = get_color20()
 
@@ -407,7 +213,8 @@ def plot_traces(model, figsize=(10, 6), maxlags=100, fontsize=8):
                                           alpha=0.5)
 
         ax[1, 2].set_xlim((0, maxlags))
-        ax[1, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[1, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
@@ -424,13 +231,16 @@ def plot_traces(model, figsize=(10, 6), maxlags=100, fontsize=8):
                                           alpha=0.5)
 
         ax[2, 2].set_xlim((0, maxlags))
-        ax[2, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[2, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
                       transform=ax[2, 2].transAxes)
     else:
-        sns.kdeplot(model.intercepts_[n_burn:].ravel(), ax=ax[1, 0], shade=True, color=colors[1])
+        sns.kdeplot(
+            model.intercepts_[n_burn:].ravel(), ax=ax[1, 0], shade=True,
+            color=colors[1])
         ax[1, 0].set_title(r'Intercept $\beta_0$', fontsize=fontsize)
         ax[1, 1].plot(model.intercepts_, c=colors[1])
 
@@ -439,14 +249,15 @@ def plot_traces(model, figsize=(10, 6), maxlags=100, fontsize=8):
                                           normed=True,  usevlines=True,
                                           alpha=0.5)
         ax[1, 2].set_xlim((0, maxlags))
-        ax[1, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[1, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
                       transform=ax[1, 2].transAxes)
 
 
-def plot_traces_mixture(model, figsize=(10, 12), maxlags=100, fontsize=8):
+def plot_traces_hdp_lpcm(model, figsize=(10, 12), maxlags=100, fontsize=8):
     fig = plt.figure(figsize=figsize)
     colors = get_color20()
 
@@ -493,7 +304,8 @@ def plot_traces_mixture(model, figsize=(10, 12), maxlags=100, fontsize=8):
                                           normed=True,  usevlines=True,
                                           alpha=0.5)
         ax[1, 2].set_xlim((0, maxlags))
-        ax[1, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[1, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
@@ -509,7 +321,8 @@ def plot_traces_mixture(model, figsize=(10, 12), maxlags=100, fontsize=8):
                                           normed=True,  usevlines=True,
                                           alpha=0.5)
         ax[2, 2].set_xlim((0, maxlags))
-        ax[2, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[2, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
@@ -525,7 +338,8 @@ def plot_traces_mixture(model, figsize=(10, 12), maxlags=100, fontsize=8):
                                           normed=True, usevlines=True,
                                           alpha=0.5)
         ax[3, 2].set_xlim((0, maxlags))
-        ax[3, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[3, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
@@ -541,7 +355,8 @@ def plot_traces_mixture(model, figsize=(10, 12), maxlags=100, fontsize=8):
                                           normed=True,  usevlines=True,
                                           alpha=0.5)
         ax[1, 2].set_xlim((0, maxlags))
-        ax[1, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[1, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
@@ -557,7 +372,8 @@ def plot_traces_mixture(model, figsize=(10, 12), maxlags=100, fontsize=8):
                                           normed=True, usevlines=True,
                                           alpha=0.5)
         ax[2, 2].set_xlim((0, maxlags))
-        ax[2, 2].text(0.5, 0.9, 'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
+        ax[2, 2].text(0.5, 0.9,
+                      'ESS = {:.2f}'.format(effective_n(x, lags, corr)),
                       fontsize=8,
                       horizontalalignment='left',
                       verticalalignment='center',
@@ -596,61 +412,6 @@ def plot_posterior_counts(model, t=0, bar_width=0.25, normalize=False,
     return fig, ax
 
 
-def plot_model_selection(model, figsize=(8, 6), include_bic=True, maxlags=100,
-                         bar_width=0.5, normalize=False):
-    freq = np.bincount(model.counts_)
-    index = np.where(freq != 0)[0]
-    freq = freq[index]
-
-    if include_bic:
-        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=figsize, sharex=True)
-
-        # BIC plot
-        ax[0].plot(model.bic_[:, 0].astype(np.int), model.bic_[:, 1], '--ko')
-        ax[0].set_ylabel('Approximate BIC')
-
-        # posterior distribution of model sizes
-        ax[1].bar(index, freq, width=bar_width)
-        ax[1].xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax[1].set_xticks(index.astype(int))
-
-        ax[1].set_ylabel('# of samples')
-        ax[1].set_xlabel('# of groups')
-    else:
-        fig, ax = plt.subplots(figsize=figsize)
-
-        if normalize:
-            freq = freq / freq.sum()
-
-        ax.bar(index, freq, width=bar_width)
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.set_xticks(index.astype(int))
-
-        if normalize:
-            ax.set_ylabel('Posterior probability')
-        else:
-            ax.set_ylabel('# of samples')
-        ax.set_xlabel('Number of groups')
-
-        n_burn = model.n_burn_
-        lambdas = model.lambdas_[n_burn:].ravel()
-        lambda_post = np.mean(lambdas)
-
-        n_samples = effective_n(lambdas, maxlags=maxlags)
-        lambda_std = np.std(lambdas) / np.sqrt(n_samples)
-        ax.text(0.8, 0.9,
-                r'$\lambda = {:.3f} \pm {:.3f}$'.format(lambda_post, lambda_std),
-                horizontalalignment='center',
-                verticalalignment='center',
-                transform=ax.transAxes,
-                fontsize=16)
-
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-
-    return fig, ax
-
-
 def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
                           param_fontsize=8, zero_threshold=1e-3,
                           include_likelihood_params=True,
@@ -681,19 +442,24 @@ def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
                           (0.6, 0.3), fontsize=12)
 
         if model.is_directed:
-            ax[0, 0].annotate(r'$\beta_{in} =$' + ' {:.2f}'.format(model.intercept_[0]),
-                              (0.6, 0.9), fontsize=12)
-            ax[0, 0].annotate(r'$\beta_{out} =$' + ' {:.2f}'.format(model.intercept_[1]),
-                              (0.6, 0.6), fontsize=12)
+            ax[0, 0].annotate(
+                r'$\beta_{in} =$' + ' {:.2f}'.format(model.intercept_[0]),
+                (0.6, 0.9), fontsize=12)
+            ax[0, 0].annotate(
+                r'$\beta_{out} =$' + ' {:.2f}'.format(model.intercept_[1]),
+                (0.6, 0.6), fontsize=12)
         else:
-            ax[0, 0].annotate(r'$\beta_0 =$ {:.2f}'.format(model.intercept_[0]),
-                              (0.5, 0.6), fontsize=12)
-        ax[0, 0].annotate(r'AUC = {:.2f}'.format(model.auc_),
-                          (0, 0.6), fontsize=12)
+            ax[0, 0].annotate(
+                r'$\beta_0 =$ {:.2f}'.format(model.intercept_[0]),
+                (0.5, 0.6), fontsize=12)
+        ax[0, 0].annotate(
+            r'AUC = {:.2f}'.format(model.auc_),
+            (0, 0.6), fontsize=12)
 
         ax[0, 0].axis('off')
 
     param_start = 1 if include_likelihood_params else 0
+
     # beta plot
     beta = model.beta_.reshape(1, -1).copy()
     beta[beta < zero_threshold] = 0.0
@@ -704,7 +470,6 @@ def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
     ax[0, param_start].set_title(r'$\beta$')
 
     # init_w plot
-
     w = model.init_weights_.reshape(1, -1).copy()
     w[w < zero_threshold] = 0.0
     active_clusters = np.unique(model.z_[0])
@@ -752,56 +517,6 @@ def plot_model_parameters(model, figsize=(10, 8), fontsize=8,
 
     return fig, ax
 
-def plot_clusters_over_time(model):
-    n_time_steps = model.Y_fit_.shape[0]
-    n_clusters = np.unique(model.z_.ravel()).shape[0]
-
-    cluster_counts = np.zeros((n_time_steps, n_clusters), dtype=np.float64)
-    for t in range(n_time_steps):
-        pass
-
-
-def plot_distance_comparison(model, X_true, intercept, radii=None,
-                             z_true=None,
-                             log_scale=True, figsize=(10, 6)):
-    if not hasattr(model, 'X_'):
-        raise ValueError('Model not fit.')
-
-    dist_fit, dist_true = [], []
-
-    triu_indices = triu_indices_from_3d(model.Y_fit_, k=1)
-    dist_fit = model.distances_[triu_indices]
-    dist_true = calculate_distances(X_true)[triu_indices]
-
-    if model.is_directed:
-        dist = calculate_distances(X_true)
-        proba_true = directed_network_probas(dist, radii,
-                                             intercept[0], intercept[1])
-    else:
-        proba_true = expit(intercept - calculate_distances(X_true))
-    auc_true = network_auc(model.Y_fit_, proba_true)
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    ratio = np.log(dist_fit / dist_true) if log_scale else dist_fit / dist_true
-    sns.distplot(ratio, hist_kws={'edgecolor': 'white'},
-                 ax=ax)
-
-    if log_scale:
-        ax.set_xlabel(r'$\log(\hat{d}_{tij}/d_{tij})$')
-    else:
-        ax.set_xlabel(r'$\hat{d}_{tij}/d_{tij}$')
-
-    ax.annotate('True AUC = {:.3f}'.format(auc_true), (-3, 1.5))
-    ax.annotate('Fitted AUC = {:.3f}'.format(model.auc_), (-3, 1.4))
-
-    if z_true is not None:
-        rand_score = adjusted_rand_score(z_true.ravel(), model.z_.ravel())
-        ax.annotate('Adjusted Rand = {:.2f}'.format(rand_score), (-3, 1.3))
-
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
 
 def draw_edge(x1, x2, ax, is_directed=False, **kwargs):
     if is_directed:
@@ -821,19 +536,6 @@ def arrow_patch(x1, x2, source_size, target_size, ax, **kwargs):
                             **kwargs)
 
     ax.add_patch(arrow)
-
-def draw_trajectory(X, z, target_size, color, ax, mask_groups, alpha=1.0):
-    shrink_target = np.sqrt(target_size) / 2
-    for t in range(X.shape[0] - 1):
-        if z[t + 1] not in mask_groups and z[t] not in mask_groups:
-            arrow = FancyArrowPatch(X[t], X[t + 1],
-                                    shrinkB=shrink_target,
-                                    arrowstyle='-|>',
-                                    mutation_scale=10,
-                                    color=color[t+1],
-                                    alpha=alpha,
-                                    zorder=1)
-            ax.add_patch(arrow)
 
 
 def plot_network_embedding(model, t=0, estimate_type='best',
@@ -954,14 +656,6 @@ def plot_network_embedding(model, t=0, estimate_type='best',
 
     # label nodes
     if number_nodes:
-        #for i in range(X.shape[1]):
-            #if mask[i]:
-            #    ax.annotate(node_names[i] + ' ({})'.format(i) if node_names is not None else str(i),
-            #                (X[t, i, 0], X[t, i, 1]),
-            #                size=node_textsize,
-            #                alpha=0.9,
-            #                xycoords='data',
-            #                zorder=3)
         repel_labels(X[t], node_names, datasize=sizes, k=repel_strength,
                      textsize=node_textsize, mask=mask, ax=ax)
 
@@ -984,12 +678,11 @@ def plot_network_embedding(model, t=0, estimate_type='best',
 
             # also plot cluster center
             ax.scatter(muk[0], muk[1],
-                        #color=colors[encoder.transform([k])[0]],
-                        color='k',
-                        s=center_size,
-                        marker='P',
-                        alpha=0.8,
-                        zorder=2)
+                       color='k',
+                       s=center_size,
+                       marker='P',
+                       alpha=0.8,
+                       zorder=2)
 
             if plot_group_sigma:
                 normal_contour(muk, sigma[k] * np.eye(2),
@@ -997,7 +690,6 @@ def plot_network_embedding(model, t=0, estimate_type='best',
                                linewidth=3 * linewidth,
                                linestyle='--',
                                facecolor=colors[encoder.transform([k])[0]],
-                               #color=colors[encoder.transform([k])[0]],
                                edgecolor='k',
                                alpha=0.15,
                                zorder=1)
@@ -1006,224 +698,6 @@ def plot_network_embedding(model, t=0, estimate_type='best',
         ax.set_title('t = {}'.format(t + 1), size=80)
     elif title_text:
         ax.set_title(title_text)
-
-    return fig, ax
-
-
-def plot_group_embedding(model, t=0, figsize=(10, 6), border=2,
-                         linewidth=0.5, node_size=50,
-                         text_map=None, title_text=None,
-                         colors=None, alpha=0.5,
-                         arrowstyle='-|>', connectionstyle=None,
-                         mutation_scale=10,
-                         only_show_connected=True):
-    # NOTE: only works for undirected graphs!
-    fig, ax = plt.subplots(figsize=figsize)
-
-    # extract stored graph
-    Y = model.Y_fit_[t]
-
-    if only_show_connected:
-        connected_ids = np.where(Y.sum(axis=0) > 0)[0]
-        freq = np.bincount(model.z_[t][connected_ids])
-    else:
-        freq = np.bincount(model.z_[t])
-
-    # only plot groups with assigned nodes
-    active_groups = np.where(freq > 0)[0]
-
-    # NOTE: should set limit aver any group that were ever  active
-    total_freq = np.zeros(model.n_components)
-    for ts in range(model.Y_fit_.shape[0]):
-        if only_show_connected:
-            connected_ids_t = np.where(model.Y_fit_[ts].sum(axis=0) > 0)[0]
-            freq_t = np.bincount(model.z_[ts][connected_ids_t])
-        else:
-            freq_t = np.bincount(model.z_[ts])
-        index_t = np.where(freq_t > 0)[0]
-        total_freq[index_t] += freq_t[index_t]
-    ever_active_groups = np.where(total_freq > 0)[0]
-
-    xy_min = np.min(model.mu_[ever_active_groups], axis=0) - border
-    xy_max = np.max(model.mu_[ever_active_groups], axis=0) + border
-
-    ax.set_aspect('equal', 'box')
-    ax.axis('off')
-    ax.set_xlim(xy_min[0], xy_max[0])
-    ax.set_ylim(xy_min[1], xy_max[1])
-
-    # draw edges
-    sizes = node_size * freq[active_groups]
-    colors = get_colors(model.z_.ravel())
-
-    group_combos = itertools.product(active_groups, active_groups)
-    for i, j in group_combos:
-        group_mask_i = model.z_[t] == i
-        group_mask_j = model.z_[t] == j
-        weight_ij = Y[group_mask_i][:, group_mask_j].sum()
-        if not model.is_directed:
-            if i < j and weight_ij > 0:
-                draw_edge(model.mu_[i], model.mu_[j], ax,
-                          is_directed=False,
-                          linewidth=linewidth * weight_ij,
-                          alpha=0.3,
-                          color='gray',
-                          zorder=1)
-        else:
-            if i != j and weight_ij > 0:
-                arrow_patch(model.mu_[i], model.mu_[j], sizes[i], sizes[j], ax,
-                           color=colors[i],
-                           alpha=alpha,
-                           connectionstyle=connectionstyle,
-                           linewidth=linewidth * weight_ij,
-                           mutation_scale=mutation_scale,
-                           arrowstyle=arrowstyle,
-                           zorder=1)
-
-    # draw group centers
-    ax.scatter(model.mu_[active_groups, 0], model.mu_[active_groups, 1],
-               c=colors[active_groups], s=node_size * freq[active_groups],
-               edgecolor='white', zorder=2)
-
-    # annotate groups
-    for k in active_groups:
-        ax.annotate(str(k) if text_map is None else text_map[k],
-                    (model.mu_[k, 0], model.mu_[k, 1]),
-                    xycoords='data',
-                    bbox=dict(boxstyle='round', alpha=0.3, color=colors[k]))
-
-    if title_text:
-        ax.set_title(title_text)
-    else:
-        ax.set_title('t = {}'.format(t))
-
-    return fig, ax
-
-
-def plot_trajectories(model, only_show_connected=True, figsize=(10, 6), colors=None,
-                      plot_group_sigma=True, linewidth=0.5, h_margin=0, v_margin=0,
-                      node_size=100,
-                      center_size=300,
-                      mask_groups=None, number_nodes=False,
-                      include_ids=None, highlight_ids=None,
-                      node_names=None):
-    fig, ax = plt.subplots(figsize=figsize)
-
-    if mask_groups is not None:
-        mask_groups = np.asarray(mask_groups)
-
-    z = model.z_
-    X = model.X_
-    mu = model.mu_
-    sigma = model.sigma_
-
-    encoder = LabelEncoder().fit(z.ravel())
-    colors = get_colors(z.ravel()) if colors is None else np.asarray(colors)
-
-    xy_min, xy_max = np.inf, -np.inf
-    node_masks = []
-    for ts in range(model.Y_fit_.shape[0]):
-        if only_show_connected:
-            node_masks.append(connected_nodes(model.Y_fit_[ts],
-                                              is_directed=model.is_directed,
-                                              size_cutoff=2))
-        else:
-            node_masks.append(np.arange(model.Y_fit_.shape[1]))
-
-        xy_min = np.minimum(xy_min, np.min(X[ts, node_masks[ts]], axis=0))
-        xy_max = np.maximum(xy_max, np.max(X[ts, node_masks[ts]], axis=0))
-
-    ax.set_aspect('equal', 'box')
-    ax.axis('off')
-
-    ax.set_xlim(xy_min[0] - h_margin, xy_max[0] + h_margin)
-    ax.set_ylim(xy_min[1] - v_margin, xy_max[1] + v_margin)
-
-    if highlight_ids is None:
-        highlight_ids = np.arange(X.shape[1])
-    else:
-        highlight_ids = np.asarray(highlight_ids)
-
-    for i in range(X.shape[1]):
-        if i in highlight_ids:
-            alpha = 1.0
-        elif include_ids is not None and i in include_ids:
-            alpha = 0.3
-        else:
-            alpha = 0.0
-
-        draw_trajectory(X[:, i, :],
-                        z=z[:, i],
-                        target_size=node_size,
-                        mask_groups=mask_groups,
-                        alpha=alpha,
-                        color=colors[encoder.transform(model.z_[:, i])],
-                        ax=ax)
-
-    for t in range(X.shape[0]):
-        highlight_mask = np.in1d(np.arange(X.shape[1]), highlight_ids)
-        ax.scatter(X[t, highlight_mask, 0], X[t, highlight_mask, 1],
-                   c=colors[encoder.transform(z[t, highlight_mask])],
-                   alpha=1.0,
-                   edgecolor='white',
-                   s=node_size,
-                   zorder=2)
-
-        #if np.any(~highlight_mask):
-        #    ax.scatter(X[t, ~highlight_mask, 0], X[t, ~highlight_mask, 1],
-        #               c=colors[encoder.transform(z[t, ~highlight_mask])],
-        #               alpha=0.3,
-        #               edgecolor='white',
-        #               s=node_size,
-        #               zorder=2)
-        if include_ids is not None:
-            ax.scatter(X[t, include_ids, 0], X[t, include_ids, 1],
-                       c=colors[encoder.transform(z[t, include_ids])],
-                       alpha=0.3,
-                       edgecolor='white',
-                       s=node_size,
-                       zorder=2)
-
-
-        if number_nodes:
-            for i in range(X.shape[1]):
-                # find first time in non-masked group
-                if mask_groups is not None:
-                    t_start = np.where(~np.in1d(z[:, i], mask_groups))[0]
-                    t_start = t_start[0] if len(t_start) else 0
-                else:
-                    t_start = 0
-
-                if t == t_start:
-                    label_str = node_names[i] + ' ({})'.format(i) if node_names is not None else str(i)
-                else:
-                    label_str = str(i)
-                ax.annotate(label_str,
-                            xy=(X[t, i, 0], X[t, i, 1]),
-                            alpha = 0.9 if i in highlight_ids else 0.0,
-                            xycoords='data')
-
-    if plot_group_sigma:
-        for k in np.unique(z.ravel()):
-            if k not in mask_groups:
-                muk = mu[k]
-
-                # also plot cluster center
-                ax.scatter(muk[0], muk[1],
-                            color=colors[encoder.transform([k])[0]],
-                            s=center_size,
-                            marker='+',
-                            alpha=0.8,
-                            zorder=1)
-
-                normal_contour(muk, sigma[k] * np.eye(2),
-                               n_std=[1, 2], ax=ax,
-                               linewidth=3 * linewidth,
-                               linestyle='--',
-                               fill=colors[encoder.transform([k])[0]],
-                               color=colors[encoder.transform([k])[0]],
-                               alpha=0.1,
-                               zorder=1)
 
     return fig, ax
 
@@ -1302,11 +776,12 @@ def alluvial_plot(z, figsize=(10, 6), margin=0.01, rec_width=0.01, alpha=0.5,
             ax.add_patch(rec)
 
             # add labels
-            ax.annotate(str(group_id + 1) if text_map is None else text_map[group_id],
-                        (spacing * t + rec_width * 2,
-                         rec_heights[t, group_id, 0] + rec_extents[t, group_id]/2.),
-                        bbox=dict(boxstyle='round', alpha=0.3, color=colors[group_id]),
-                        xycoords='data')
+            ax.annotate(
+                str(group_id + 1) if text_map is None else text_map[group_id],
+                (spacing * t + rec_width * 2,
+                 rec_heights[t, group_id, 0] + rec_extents[t, group_id]/2.),
+                bbox=dict(boxstyle='round', alpha=0.3, color=colors[group_id]),
+                xycoords='data')
 
         # draw flow lines
         if t < n_time_steps - 1:
@@ -1376,7 +851,8 @@ def plot_posterior_cooccurrence(model, t=0, label_type='map', threshold=0.5,
     encoder = LabelEncoder().fit(z)
     colors = get_colors(z) if colors is None else colors
 
-    mask = cooccurence_proba <= mask_threshold if mask_threshold is not None else None
+    mask = (cooccurence_proba <= mask_threshold if
+            mask_threshold is not None else None)
     cg = sns.clustermap(cooccurence_proba,
                         row_linkage=linkage, col_linkage=linkage,
                         row_colors=colors[encoder.transform(z)],
@@ -1387,13 +863,6 @@ def plot_posterior_cooccurrence(model, t=0, label_type='map', threshold=0.5,
     cg.ax_row_dendrogram.set_visible(False)
 
     return z
-
-
-def plot_adjacency_matrix_from_model(model, t=0, figsize=(8, 6)):
-    Y = model.Y_fit_[t].copy()
-    z = model.z_[t].copy()
-
-    return plot_adjacency_matrix(Y, z, figsize=figsize)
 
 
 def plot_adjacency_matrix(Y, z, figsize=(8, 6)):

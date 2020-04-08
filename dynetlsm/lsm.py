@@ -271,12 +271,18 @@ class DynamicNetworkLSM(BaseEstimator):
 
     @property
     def distances_(self):
+        """Distance matrix between latent positions,
+        shape (n_time_steps, n_nodes, n_nodes)
+        """
         if not hasattr(self, 'X_'):
             raise ValueError('Model not fit.')
         return calculate_distances(self.X_)
 
     @property
     def probas_(self):
+        """Estimated connection probability matrix,
+        shape (n_time_steps, n_nodes, n_nodes).
+        """
         if not hasattr(self, 'X_'):
             raise ValueError('Model not fit.')
 
@@ -295,6 +301,7 @@ class DynamicNetworkLSM(BaseEstimator):
 
     @property
     def auc_(self):
+        """In-sample AUC of the final estimated model."""
         ## FIXME: This should mask nan values
         if not hasattr(self, 'X_'):
             raise ValueError('Model not fit.')
@@ -302,6 +309,24 @@ class DynamicNetworkLSM(BaseEstimator):
                            is_directed=self.is_directed)
 
     def fit(self, Y):
+        """Sample from the posterior of the latent space model for dynamic
+        networks based on an observed dynamic network Y.
+
+        Parameters
+        ----------
+        Y : array-like, shape (n_time_steps, n_nodes, n_nodes)
+            The training dynamic network. The networks should be represented
+            as binary directed or undirected adjacency matrices. For example,
+            Y[0] is an array of shape (n_nodes, n_nodes) corresponding to the
+            adjacency matrix of the network at time zero. Currently,
+            weighted networks are not supported. The network should be stored
+            as ``dtype=np.float64``.
+
+        Returns
+        -------
+        self : DynamicNetworkLSM
+            Fitted estimator.
+        """
         n_time_steps, n_nodes, _ = Y.shape
         rng = check_random_state(self.random_state)
 

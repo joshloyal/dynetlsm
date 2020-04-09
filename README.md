@@ -153,10 +153,24 @@ from dynetlsm.plots import plot_traces
 
 plot_traces(lsm)
 ```
+
 <p align="center">
 <img src="/images/lsm_traces.png" alt="Traces of the LSM model" width="400">
 </p>
 
+We can then visualize the latent space embeddings:
+```python
+from dynetlsm.plots import plot_latent_space
+
+axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 6))
+for t, ax in enumerate(axes.flat):
+        plot_latent_space(lsm, t=t, connectionstyle=None, number_nodes=False,
+                          linewidth=0.1, node_size=200, border=0.2, ax=ax)
+```
+
+<p align="center">
+<img src="/images/lsm_latent_space.png" alt="Latent Space of the LSM model" width="400">
+</p>
 
 ```python
 

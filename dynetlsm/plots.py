@@ -546,8 +546,12 @@ def plot_latent_space_lsm(model, t=0,
                           textsize=10, size_cutoff=1,
                           node_names=None, use_radii=True,
                           node_textsize=10, repel_strength=0.5,
-                          sample_id=None):
-    fig, ax = plt.subplots(figsize=figsize)
+                          sample_id=None, ax=None):
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = None
 
     if only_show_connected:
         mask = connected_nodes(model.Y_fit_[t],
@@ -650,9 +654,13 @@ def plot_latent_space_lpcm(model, t=0, estimate_type='best',
                            plot_group_sigma=True, mask_groups=None,
                            node_names=None, use_radii=True,
                            node_textsize=10, repel_strength=0.5,
-                           group_id=None, colors=None, sample_id=None):
+                           group_id=None, colors=None, sample_id=None,
+                           ax=None):
 
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = None
 
     if mask_groups is not None:
         mask_groups = np.asarray(mask_groups)

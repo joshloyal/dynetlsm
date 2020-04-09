@@ -36,6 +36,8 @@ pip install -U git+https://github.com/joshloyal/dynetlsm.git
 Background
 ----------
 
+### Latent Space Models
+
 Latent space models (LSMs) are a powerful approach to modeling network data. One is often interested in inferring properties of nodes in a network based on their connectivity patterns. Originally proposed by Hoff et al. (2002), LSMs learn a latent embedding for each node that captures the similarity between them. This package focuses on embeddings within a Euclidean space so that the log-odds of forming an edge between two nodes is inversely proportional to the distance between their latent positions. In other words, nodes that are close together in the latent space are more likely to form a connection in the observed network. The generative model is as follows:
 
 1. For each node, sample a node's latent position from a Gaussian distribution:
@@ -50,7 +52,7 @@ Latent space models (LSMs) are a powerful approach to modeling network data. One
 <img src="/images/static_lsm.png" alt="static lsm" width="400">
 </p>
 
-For dynamic (time-varying) networks, one is also interested in determining how properties of the nodes change over time. LSMs can also accomplish this task. Sarkar and Moore (2005) and Sewell and Chen (2015) proposed to allow the latent positions to evolve over time through a Gaussian random-walk Markovian process. Based on these latent positions, the edges in the network form in the same way as the static case. The generative process is as follows:
+For dynamic (time-varying) networks, one is also interested in determining how properties of the nodes change over time. LSMs can also accomplish this task. Sarkar and Moore (2005) and Sewell and Chen (2015) proposed propagating the latent positions through time with a Gaussian random-walk Markovian process. Based on these latent positions, the edges in the network form in the same way as the static case. The generative process is as follows:
 
 1. For `t = 1`, sample a node's initial latent position from a Gaussian distribution:
 
@@ -70,6 +72,8 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 <img src="/images/dynamic_lsm.png" alt="static lsm" width="400">
 </p>
 
+
+### Latent Position Clustering Models
 Determining the high-level community structure of a network is another important task in network analysis. It is especially difficult in the dynamic setting since the number of communities may change over time. Loyal and Chen (2020) proposed using a sticky hierarchical Dirichlet process hidden Markov model (HDP-HMM) in conjunction with the latent position clustering model (LPCM) of Handcock et al. (2007) and Sewell and Chen (2017) to infer time-varying communities. In the community detection setting, each node is assigned a latent community label in addition to their latent position. Intuitively, communities are the result of clustering within the latent space. This is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model. The latent community labels evolve according to iid HDP-HMMs whose latent variables correspond to the mixture component that a node is assigned to at a particular time point. The generative model is as follows:
 
 1. Draw the time-varying transition probabilities for the HMMs from a sticky-HDP:

@@ -172,7 +172,7 @@ for t, ax in enumerate(axes.flat):
 <img src="/images/lsm_latent_space.png" alt="Latent Space of the LSM model" width="400">
 </p>
 
-Although the nodes are embedded in a way that nodes sharing many connections are close together, the true community structure of the network is not apparent. This can be easily remedied by applying the HDP-LPCM. As before, we initialize the model and call `fit`:
+Although the nodes are embedded in a way that nodes sharing many connections are close together, the true community structure of the network is not apparent. This is easily remedied by applying the HDP-LPCM. As before, we initialize the model and call `fit`:
 ```python
 
 from dynetlsm import DynamicNetworkHDPLPCM
@@ -207,7 +207,7 @@ for t, ax in enumerate(axes.flat):
 <p align="center">
 <img src="/images/hdp_lpcm_latent_space.png" alt="Latent Space of the HDP-LPCM" width="500">
 </p>
-The embedding inferred by the HDP-LPCM makes the community structure of the network very apparent. It is also able to correctly infer that the initial two communities split-off into four communities at the second time point. To better visualize this behavior, one can display an alluvial diagram of the label assignments over time:
+The embedding inferred by the HDP-LPCM makes the community structure of the network apparent. The HDP-LPCM correctly infers that the two communities split off into four communities at the second time point. To better visualize this behavior, one can display an alluvial diagram of the label assignments over time:
 
 ```python
 from dynetlsm.plots import alluvial_plot

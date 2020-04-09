@@ -79,12 +79,13 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 
 
 #### Static Networks
-Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007). Intuitively, they posited that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
+Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007) with their latent position clustering model (LPCM). Intuitively, the LPCM posits that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
 
 <p align="center">
 <img src="/images/lpcm.png" alt="latent positions prior" width="225">
 </p>
 
+The rest of the model is the same as the original LSM. In practice, one interprets nodes that share the same mixture component as belonging to the same community.
 
 #### Dynamic Networks
 Inferring a network's community structure is especially difficult for dynamic networks since the number of communities may change over time. Loyal and Chen (2020) proposed using a sticky hierarchical Dirichlet process hidden Markov model (HDP-HMM) in conjunction with the latent position clustering model (LPCM) of Handcock et al. (2007) and Sewell and Chen (2017) to infer time-varying communities. In the community detection setting, each node is assigned a latent community label in addition to their latent position. Intuitively, communities are the result of clustering within the latent space. This is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model. The latent community labels evolve according to iid HDP-HMMs whose latent variables correspond to the mixture component that a node is assigned to at a particular time point. The generative model is as follows:

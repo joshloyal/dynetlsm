@@ -5,13 +5,13 @@ Background
 
 Latent space models (LSMs) are a powerful approach to modeling network data. One is often interested in inferring properties of nodes in a network based on their connectivity patterns. Originally proposed by Hoff et al. 2002, LSMs learn a latent embedding for each node that captures the similarity between them. This package focuses on embeddings within a Euclidean space so that the log-odds of forming an edge between two nodes is inversally proportional the distance between their latent positions. In other words, nodes that are close together in the latent space are more likeliy to form a connection in the observed network. The generative model is as follows:
 
-1. For each node, we sample their latent position from a Gaussian distribution:
+1. For each node, we sample a node's latent position from a Gaussian distribution:
 
 <p align="center">
 <img src="/images/static_lsm_prior.png" alt="latent positions prior" width="200">
 </p>
 
-2. For each edge, we sample a connection from Bernoulli distribution:
+2. For each edge, we sample a connection from a Bernoulli distribution:
 
 <p align="center">
 <img src="/images/static_lsm.png" alt="static lsm" width="400">

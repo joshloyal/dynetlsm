@@ -10,13 +10,13 @@ Latent space models (LSMs) are a powerful approach to modeling network data. The
 1. For each node:
 
 <p align="center">
-<img src="/images/static_lsm_prior.png" alt="static_lsm" width="300">
+<img src="/images/static_lsm_prior.png" alt="latent positions prior" width="300">
 </p>
 
 2. For each edge:
 
 <p align="center">
-<img src="/images/static_lsm.png" alt="static_lsm" width="300">
+<img src="/images/static_lsm.png" alt="static lsm" width="300">
 </p>
 
 In the dynamic setting we

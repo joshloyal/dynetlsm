@@ -1,8 +1,5 @@
 # dynetLSM: Bayesian inference for latent space models of dynamic networks
 
-Installation
-------------
-
 Dependencies
 ------------
 dynetlsm requires:

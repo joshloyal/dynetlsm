@@ -134,15 +134,16 @@ from dynetlsm.datasets import simple_splitting_dynamic_network
 
 # Y : ndarray, shape (2, 50, 50)
 #   The adjacency matrices at each time point
-# labels : ndarray, shape  (2, 50) c
+# labels : ndarray, shape  (2, 50)
 #   The true community labels of the nodes at each time point.
 Y, labels = simple_splitting_dynamic_network(n_nodes=50, n_time_steps=2)
 ```
 
+To fit a dynamic LSM with a 2-dimensional latent space, we initialize the sampler and call `fit`:
 ```python
 from dynetlsm import DynamicNetworkLSM
 
-lsm = DynamicNetworkLSM(n_features=2)
+lsm = DynamicNetworkLSM(n_features=2, random_state=42)
 lsm.fit(Y)
 ```
 

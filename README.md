@@ -164,8 +164,8 @@ from dynetlsm.plots import plot_latent_space
 
 axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 6))
 for t, ax in enumerate(axes.flat):
-        plot_latent_space(lsm, t=t, connectionstyle=None, number_nodes=False,
-                          linewidth=0.1, node_size=200, border=0.2, ax=ax)
+    plot_latent_space(lsm, t=t, connectionstyle=None, number_nodes=False,
+                      linewidth=0.1, node_size=200, border=0.2, ax=ax)
 ```
 
 <p align="center">
@@ -196,10 +196,12 @@ We can then visualize the latent space embeddings as well as the components of t
 ```python
 from dynetlsm.plots import plot_latent_space
 
-axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 6))
+
+fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 6))
 for t, ax in enumerate(axes.flat):
-        plot_latent_space(lsm, t=t, connectionstyle=None, number_nodes=False,
-                          linewidth=0.1, node_size=200, border=0.2, ax=ax)
+    plot_latent_space(lpcm, t=t, connectionstyle=None,
+                      number_nodes=False, border=1.2, linewidth=0.2,
+                      center_size=100, node_size=100, ax=ax)
 ```
 
 <p align="center">

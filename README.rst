@@ -20,7 +20,7 @@
 
 dynetLSM
 ========
-Bayesian infernece for latent space models of dynamic networks
+Bayesian inference for latent space model of dynamic networks
 
 Background
 ----------

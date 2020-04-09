@@ -21,6 +21,8 @@ from scipy.spatial.distance import squareform
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import LabelEncoder
 
+from .lsm import DynamicNetworkLSM
+from .hdp_lpcm import DynamicNetworkHDPLPCM
 from .array_utils import nondiag_indices_from
 from .trace_utils import effective_n
 from .network_statistics import connected_nodes
@@ -30,8 +32,7 @@ from .text_utils import repel_labels
 __all__ = ['plot_network_pyvis',
            'plot_network_embedding',
            'plot_probability_matrix',
-           'plot_traces_lsm',
-           'plot_traces_lpcm',
+           'plot_traces',
            'plot_poserior_counts',
            'plot_transition_probabilities',
            'plot_adjacency_matrix',
@@ -166,6 +167,18 @@ def plot_probability_matrix(probas, z, figsize=(10, 6),
                     cbar_kws={"orientation": "horizontal"})
 
     return fig, ax
+
+
+def plot_traces(model, figsize=(10, 12), maxlags=100, fontsize=8):
+    if isinstance(model, DynamicNetworkLSM):
+        return plot_traces_lsm(
+            model, figsize=figsize, maxlags=maxlags, fontsize=fontsize)
+    elif isinstance(model, DynamicNetworkHDPLPCM):
+        return plot_traces_hdp_lpcm(
+            model, figsize=figsize, maxlags=maxlags, fontsize=fontsize)
+    else:
+        raise ValueError("`model` class not recognized. Must be one of"
+                         "{'DynamicNetworkLSM, 'DynamicNetworkHDPLPCM'}.")
 
 
 def plot_traces_lsm(model, figsize=(10, 6), maxlags=100, fontsize=8):

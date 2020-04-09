@@ -147,6 +147,17 @@ lsm = DynamicNetworkLSM(n_features=2, random_state=42)
 lsm.fit(Y)
 ```
 
+To assess the algorithms convergence, we extract the traces:
+```python
+from dynetlsm.plots import plot_traces
+
+plot_traces(lsm)
+```
+<p align="center">
+<img src="/images/lsm_traces.png" alt="Traces of the LSM model" width="200">
+</p>
+
+
 ```python
 
 from dynetlsm import DynamicNetworkHDPLPCM

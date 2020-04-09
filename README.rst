@@ -26,9 +26,11 @@ Background
 ----------
 
 Latent space models (LSMs) are a powerful approach to modeling network data. The basic idea is to embed a network into a latent Euclidean space such that closeness in the latent space increases the probability that two nodes form an edge in the observed network. In other words, we associate a latent . The generative model is as follows:
-    1 For each node:
-    2. For each edge:
-        ..image:: images/static_lsm.png
+
+1. For each node:
+
+2. For each edge:
+.. image:: images/static_lsm.png
 
 In the dynamic setting we
 

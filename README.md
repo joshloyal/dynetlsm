@@ -48,7 +48,7 @@ Determining the high-level community structure of a network is another important
 2. For `t = 1, ..., T`, draw a node's latent community labels according to an HMM:
 
 <p align="center">
-<img src="/images/dynamic_label.png" alt="latent positions prior" width="300">
+<img src="/images/dynamic_label.png" alt="latent positions prior" width="200">
 </p>
 
 3. For `t = 1`, sample a node's initial latent position from its assigned Gaussian mixture component:

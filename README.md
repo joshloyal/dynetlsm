@@ -45,7 +45,7 @@ Determining the high-level community structure of a network is another important
 <img src="/images/hdp.png" alt="latent positions prior" width="500">
 </p>
 
-2. Draw a node's latent community labels according to an HMM:
+2. For `t = 1, ..., T`, draw a node's latent community labels according to an HMM:
 
 <p align="center">
 <img src="/images/dynamic_label.png" alt="latent positions prior" width="300">

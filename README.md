@@ -132,8 +132,11 @@ To understand the merits of both approaches, we provide an example using a synth
 ```python
 from dynetlsm.datasets import simple_splitting_dynamic_network
 
-# Y is numpy array with shape (2, 50, 50) containing the adacency matrices at each time point
-# labels is a numpy array with shape (2, 50) containing the true community labels of each node.
+# Y : ndarray, shape (2, 50, 50)
+#   The adjacency matrices at each time point
+# labels : ndarray, shape  (2, 50) c
+#   The true community labels of the nodes at each time point.
+
 Y, labels = simple_splitting_dynamic_network(n_nodes=50, n_time_steps=2)
 ```
 

@@ -5,7 +5,10 @@ Bayesian inference for latent space models of dynamic networks
 Background
 ----------
 
-Latent space models (LSMs) are a powerful approach to modeling network data. The basic idea is to embed a network into a latent Euclidean space such that closeness in the latent space increases the probability that two nodes form an edge in the observed network. In other words, we associate a latent . The generative model is as follows:
+Latent space models (LSMs) are a powerful approach to modeling network data. In particular,
+
+
+The basic idea is to embed a network into a latent Euclidean space such that closeness in the latent space increases the probability that two nodes form an edge in the observed network. In other words, we associate a latent . The generative model is as follows:
 
 1. For each node:
 
@@ -19,21 +22,27 @@ Latent space models (LSMs) are a powerful approach to modeling network data. The
 <img src="/images/static_lsm.png" alt="static lsm" width="400">
 </p>
 
-In the dynamic setting we
+In the dynamic setting, the latent positions evolve through random-walk Markovian dynamics:
 
 
-To infer group structure we
-
+It is often the case that we want to infer community structure in a network.
 
 Example
 -------
 
 ```python
+from dynetlsm import DynamicNetworkLSM
+
+lsm_model = DynamicNetworkLSM(n_features=2)
+lsm_model.fit(Y)
+```
+
+```python
 
 from dynetlsm import DynamicNetworkHDPLPCM
 
-model = DynamicNetworkHDPLPCM(n_features=2, n_components=10)
-model.fit(Y)
+lpcm_model = DynamicNetworkHDPLPCM(n_features=2, n_components=10)
+lpcm_model.fit(Y)
 ```
 
 

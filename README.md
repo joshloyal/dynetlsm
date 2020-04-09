@@ -29,7 +29,7 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 
 <p align="center">
 <img src="/images/dynamic_lsm_rw.png" alt="latent positions prior" width="200">
-<
+
 
 3. For each edge, we sample a connection from a Bernoulli distribution:
 

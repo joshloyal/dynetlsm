@@ -133,6 +133,8 @@ To understand the merits of both approaches, we provide an example using a synth
 from dynetlsm.datasets import simple_splitting_dynamic_network
 
 Y, labels = simple_splitting_dynamic_network(n_nodes=50, n_time_steps=2)
+print(Y.shape)
+(2, 50, 50)
 ```
 
 ```python

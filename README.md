@@ -147,7 +147,7 @@ lsm = DynamicNetworkLSM(n_features=2, random_state=42)
 lsm.fit(Y)
 ```
 
-To assess the algorithms convergence, we extract the traces:
+To assess the convergence of the algorithm, we visualize the traces:
 ```python
 from dynetlsm.plots import plot_traces
 
@@ -172,13 +172,25 @@ for t, ax in enumerate(axes.flat):
 <img src="/images/lsm_latent_space.png" alt="Latent Space of the LSM model" width="400">
 </p>
 
+Although the nodes are embedded in a way that nodes sharing many connections are close together, the true community structure of the network is not apparent. This can be easily remedied by applying the HDP-LPCM. As before, we initialize the model and call `fit`:
 ```python
 
 from dynetlsm import DynamicNetworkHDPLPCM
 
-lpcm = DynamicNetworkHDPLPCM(n_features=2, n_components=10)
+lpcm = DynamicNetworkHDPLPCM(n_features=2, n_components=10, random_state=42)
 lpcm.fit(Y)
 ```
+
+Once again, we assess the convergence of the algorithm by visualizing the traces:
+```python
+from dynetlsm.plots import plot_traces
+
+plot_traces(lpcm)
+```
+
+<p align="center">
+<img src="/images/hdp_lpcm_traces.png" alt="Traces of the HDP-LPCM" width="400">
+</p>
 
 
 

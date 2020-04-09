@@ -124,9 +124,16 @@ Inferring a network's community structure is especially difficult for dynamic ne
 Example
 -------
 DynetLSM exposes two classes for working with latent space models for dynamic networks:
-* ```python DynamicNetworkLSM```:  Interface for learning the LSM in Sewell and Chen (2015),
-* ```python DynamicNetworkHDPLPCM```: Interface for learning the HDP-LPCM in Loyal and Chen (2020).
 
+* `DynamicNetworkLSM`:  Interface for learning the LSM in Sewell and Chen (2015),
+* `DynamicNetworkHDPLPCM`: Interface for learning the HDP-LPCM in Loyal and Chen (2020).
+
+To understand the merits of both approaches, we provide an example using a synthetic dynamic network which contains two communities at `t = 1` and four communities at `t = 2`. We can generate the data as follows:
+```python
+from dynetlsm.datasets import simple_splitting_dynamic_network
+
+Y, labels = simple_splitting_dynamic_network(n_nodes=50, n_time_steps=2)
+```
 
 ```python
 from dynetlsm import DynamicNetworkLSM

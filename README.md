@@ -219,6 +219,7 @@ alluvial_plot(lpcm.z_)
 <img src="/images/alluvial_diagram.png" alt="Alluvial Diagram of the HDP-LPCM" width="300">
 </p>
 
+From this diagram, one can see that group 1 primarily splits off into group 3, while group 2 primarily splits off into group 4.
 
 
 References:

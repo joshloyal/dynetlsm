@@ -13,7 +13,10 @@ def repel_labels(X, node_names, datasize, k=1.0, textsize=10, mask=None, ax=None
     for i, (x, y) in enumerate(X):
         if mask[i]:
             data_str = data_fmt.format(i)
-            label_str = label_fmt.format(node_names[i], i)
+            if node_names is None:
+                label_str = "{}".format(i)
+            else:
+                label_str = label_fmt.format(node_names[i], i)
             data_nodes.append(data_str)
             G.add_node(data_str)
             G.add_node(label_str)

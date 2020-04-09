@@ -122,12 +122,12 @@ class DynamicNetworkLSM(BaseEstimator):
     is_directed : bool (default=False)
         Whether the network is directed or undirected.
 
-    n_iter : int (default=2500)
+    n_iter : int (default=5000)
         Number of iterations after tuning and burn-in to run the
         Markov chain Monte Carlo (MCMC) sampler. Total number of iterations
         is equal to `tune + burn + n_iter`.
 
-    tune : int (default=1000)
+    tune : int (default=2500)
         Number of iterations used to tune the step sizes of the
         metropolis-hastings samplers.
 
@@ -135,7 +135,7 @@ class DynamicNetworkLSM(BaseEstimator):
         Number of iterations to wait before adjusting the random-walk
         step sizes during the tuning phase.
 
-    burn : int (default=1000)
+    burn : int (default=2500)
         Number of iterations used for burn-in after the tuning phase.
 
     intercept_prior : float or str, optional (default='auto')
@@ -236,10 +236,10 @@ class DynamicNetworkLSM(BaseEstimator):
     def __init__(self,
                  n_features=2,
                  is_directed=False,
-                 n_iter=2500,
-                 tune=500,
+                 n_iter=5000,
+                 tune=2500,
                  tune_interval=100,
-                 burn=1000,
+                 burn=2500,
                  intercept_prior='auto',
                  intercept_variance_prior=2.0,
                  tau_sq=2.0,
@@ -268,6 +268,16 @@ class DynamicNetworkLSM(BaseEstimator):
         self.n_resample_control = n_resample_control
         self.copy = copy
         self.random_state = random_state
+
+    @property
+    def n_burn_(self):
+        n_burn = 0
+        if self.burn is not None:
+            n_burn += self.burn
+        if self.tune is not None:
+            n_burn += self.tune
+
+        return n_burn
 
     @property
     def distances_(self):

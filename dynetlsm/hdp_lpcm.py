@@ -187,12 +187,12 @@ class DynamicNetworkHDPLPCM(BaseEstimator):
                    criterion (BIC),
             'map': select the maximum a-posterior (MAP) estimate,
 
-    n_iter : int (default=2500)
+    n_iter : int (default=5000)
         Number of iterations after tuning and burn-in to run the
         Markov chain Monte Carlo (MCMC) sampler. Total number of iterations
         is equal to `tune + burn + n_iter`.
 
-    tune : int (default=1000)
+    tune : int (default=2500)
         Number of iterations used to tune the step sizes of the
         metropolis-hastings samplers.
 
@@ -200,7 +200,7 @@ class DynamicNetworkHDPLPCM(BaseEstimator):
         Number of iterations to wait before adjusting the random-walk
         step sizes during the tuning phase.
 
-    burn : int (default=1000)
+    burn : int (default=2500)
         Number of iterations used for burn-in after the tuning phase.
 
     thin : int or None (default=None)
@@ -384,10 +384,10 @@ class DynamicNetworkHDPLPCM(BaseEstimator):
                  n_components=10,
                  is_directed=False,
                  selection_type='vi',
-                 n_iter=2500,
-                 tune=1000,
+                 n_iter=5000,
+                 tune=2500,
                  tune_interval=100,
-                 burn=1000,
+                 burn=2500,
                  thin=None,
                  gamma=1.0,
                  alpha_init=1.0,

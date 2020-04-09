@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
 import pandas as pd
+import pyvis.network as pyvis
 import scipy.linalg as linalg
 import scipy.sparse as sp
 import scipy.cluster.hierarchy as hc
@@ -30,7 +31,7 @@ from .text_utils import repel_labels
 
 
 __all__ = ['plot_network_pyvis',
-           'plot_network_embedding',
+           'plot_latent_space',
            'plot_probability_matrix',
            'plot_traces',
            'plot_poserior_counts',
@@ -109,11 +110,6 @@ def plot_network_pyvis(Y, labels=None, output_name='network_vis.html',
     """Use the pyvis plotting library to display a network."""
     network = pyvis.Network(height=height, width=width, notebook=in_notebook,
                             directed=is_directed, **kwargs)
-
-    try:
-        import pyvis.network as pyvis
-    except ImportError:
-        raise ImportError("PyVis library necessary for this visualization.")
 
     # import graph
     if is_directed:
@@ -433,8 +429,8 @@ def plot_transition_probabilities(model, figsize=(10, 8), fontsize=8,
 
     fig = plt.figure(figsize=figsize)
 
-    ncols = 2 if n_time_steps == 3 else 3
-    nrows = ((n_time_steps - 1) // ncols) + 1
+    ncols = 2 if n_time_steps <= 3 else 3
+    nrows = 2 if n_time_steps == 2 else ((n_time_steps - 1) // ncols) + 1
     height_ratios = [.2] + [.8 / (nrows - 1)] * (nrows - 1)
     gs = gridspec.GridSpec(nrows=nrows, ncols=ncols,
                            height_ratios=height_ratios)
@@ -529,7 +525,120 @@ def arrow_patch(x1, x2, source_size, target_size, ax, **kwargs):
     ax.add_patch(arrow)
 
 
-def plot_network_embedding(model, t=0, estimate_type='best',
+def plot_latent_space(model, t=0, **kwargs):
+    if isinstance(model, DynamicNetworkLSM):
+        return plot_latent_space_lsm(model, t=t, **kwargs)
+    elif isinstance(model, DynamicNetworkHDPLPCM):
+        return plot_latent_space_lpcm(model, t=t, **kwargs)
+    else:
+        raise ValueError("`model` class not recognized. Must be one of"
+                         "{'DynamicNetworkLSM, 'DynamicNetworkHDPLPCM'}.")
+
+
+def plot_latent_space_lsm(model, t=0,
+                          only_show_connected=True,
+                          figsize=(10, 6), border=0.1,
+                          head_width=0.003, linewidth=0.5, text_map=None,
+                          node_size=100,
+                          alpha=0.8, title_text='auto',
+                          arrowstyle='-|>', connectionstyle='arc3,rad=0.2',
+                          mutation_scale=30, number_nodes=True,
+                          textsize=10, size_cutoff=1,
+                          node_names=None, use_radii=True,
+                          node_textsize=10, repel_strength=0.5,
+                          sample_id=None):
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if only_show_connected:
+        mask = connected_nodes(model.Y_fit_[t],
+                               is_directed=model.is_directed,
+                               size_cutoff=size_cutoff)
+    else:
+        mask = np.full(model.Y_fit_.shape[1], True)
+
+    if sample_id is not None:
+        X = model.Xs_[sample_id]
+        if model.is_directed:
+            radii = model.radiis_[sample_id]
+    else:
+        X = model.X_
+        if model.is_directed:
+            radii = model.radii_
+
+    xy_min = np.min(X[t, mask], axis=0)
+    xy_max = np.max(X[t, mask], axis=0)
+
+    for ts in range(model.Y_fit_.shape[0]):
+        if only_show_connected:
+            mask_t = connected_nodes(model.Y_fit_[ts],
+                                   is_directed=model.is_directed,
+                                   size_cutoff=size_cutoff)
+        else:
+            mask_t = np.arange(model.Y_fit_.shape[1])
+
+        xy_min = np.minimum(xy_min, np.min(X[ts, mask_t], axis=0))
+        xy_max = np.maximum(xy_max, np.max(X[ts, mask_t], axis=0))
+
+    xy_min -= border
+    xy_max += border
+
+    ax.set_aspect('equal', 'box')
+    ax.axis('off')
+    ax.set_xlim(xy_min[0], xy_max[0])
+    ax.set_ylim(xy_min[1], xy_max[1])
+
+    if model.is_directed:
+        row, col = nondiag_indices_from(model.Y_fit_[t])
+    else:
+        row, col = np.triu_indices_from(model.Y_fit_[t])
+
+    if model.is_directed and use_radii:
+        sizes = radii / radii.min() * node_size
+    else:
+        sizes = node_size
+
+    for i, j in zip(row, col):
+        if model.Y_fit_[t, i, j] == 1.0:
+            x1 = X[t, i]
+            x2 = X[t, j]
+
+            if model.is_directed:
+                arrow_patch(x1, x2, sizes[i], sizes[j], ax,
+                           alpha=alpha,
+                           connectionstyle=connectionstyle,
+                           linewidth=linewidth,
+                           mutation_scale=mutation_scale,
+                           arrowstyle=arrowstyle,
+                           zorder=1)
+            else:
+                arrow_patch(x1, x2, sizes, sizes, ax,
+                           alpha=alpha,
+                           connectionstyle=connectionstyle,
+                           linewidth=linewidth,
+                           mutation_scale=mutation_scale,
+                           arrowstyle='-',
+                           zorder=1)
+
+    ax.scatter(X[t, mask, 0], X[t, mask, 1],
+               alpha=alpha,
+               edgecolor='white',
+               s=sizes,
+               zorder=2)
+
+    # label nodes
+    if number_nodes:
+        repel_labels(X[t], node_names, datasize=sizes, k=repel_strength,
+                     textsize=node_textsize, mask=mask, ax=ax)
+
+    if title_text == 'auto':
+        ax.set_title('t = {}'.format(t + 1), size=18)
+    elif title_text:
+        ax.set_title(title_text)
+
+    return fig, ax
+
+
+def plot_latent_space_lpcm(model, t=0, estimate_type='best',
                            only_show_connected=True,
                            figsize=(10, 6), border=0.1,
                            head_width=0.003, linewidth=0.5, text_map=None,
@@ -580,8 +689,6 @@ def plot_network_embedding(model, t=0, estimate_type='best',
     encoder = LabelEncoder().fit(z.ravel())
     colors = get_colors(z.ravel()) if colors is None else np.asarray(colors)
 
-    #xy_min = np.min(model.X_, axis=(0, 1)) - border
-    #xy_max = np.max(model.X_, axis=(0, 1)) + border
     xy_min = np.min(X[t, mask], axis=0)
     xy_max = np.max(X[t, mask], axis=0)
 

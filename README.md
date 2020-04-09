@@ -60,7 +60,7 @@ Determining the high-level community structure of a network is another important
 4. For `t = 2, ..., T`, sample a node's latent position a mixture between its previous position and its assigned Gaussian mixture component:
 
 <p align="center">
-<img src="/images/dynamic_lpcm_rw.png" alt="latent positions prior" width="200">
+<img src="/images/dynamic_lpcm_rw.png" alt="latent positions prior" width="300">
 </p>
 
 5. For each edge, sample a connection from a Bernoulli distribution

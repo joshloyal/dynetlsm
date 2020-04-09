@@ -12,7 +12,7 @@ Latent space models (LSMs) are a powerful approach to modeling network data. The
 2. For each edge:
 
 <p align="center">
-<img src="images/static_lsm.pgn" alt="Math" width="300">
+<img src="/images/static_lsm.pgn" alt="static_lsm" width="300">
 </p>
 
 In the dynamic setting we

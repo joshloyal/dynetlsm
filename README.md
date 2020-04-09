@@ -54,7 +54,7 @@ Determining the high-level community structure of a network is another important
 3. For `t = 1`, sample a node's initial latent position from its assigned Gaussian mixture component:
 
 <p align="center">
-<img src="/images/dynamic_lpcm_initial.png" alt="latent positions prior" width="250">
+<img src="/images/dynamic_lpcm_initial.png" alt="latent positions prior" width="225">
 </p>
 
 4. For `t = 2, ..., T`, sample a node's latent position a mixture between its previous position and its assigned Gaussian mixture component:

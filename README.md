@@ -136,7 +136,6 @@ from dynetlsm.datasets import simple_splitting_dynamic_network
 #   The adjacency matrices at each time point
 # labels : ndarray, shape  (2, 50) c
 #   The true community labels of the nodes at each time point.
-
 Y, labels = simple_splitting_dynamic_network(n_nodes=50, n_time_steps=2)
 ```
 

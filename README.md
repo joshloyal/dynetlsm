@@ -1,4 +1,4 @@
-# dynetLSM: Bayesian inference for latent space models of dynamic networks
+# DynetLSM: Bayesian inference for latent space models of dynamic networks
 
 Dependencies
 ------------
@@ -123,6 +123,10 @@ Inferring a network's community structure is especially difficult for dynamic ne
 
 Example
 -------
+DynetLSM exposes two classes for working with latent space models for dynamic networks:
+* `DynamicNetworkLSM`:  Interface for learning the LSM in Sewell and Chen (2015)
+* `DynamicNetworkHDPLPCM`: Interface for learning the HDP-LPCM in Loyal and Chen (2020).
+
 
 ```python
 from dynetlsm import DynamicNetworkLSM

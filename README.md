@@ -154,7 +154,7 @@ from dynetlsm.plots import plot_traces
 plot_traces(lsm)
 ```
 <p align="center">
-<img src="/images/lsm_traces.png" alt="Traces of the LSM model" width="200">
+<img src="/images/lsm_traces.png" alt="Traces of the LSM model" width="400">
 </p>
 
 

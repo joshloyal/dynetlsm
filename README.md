@@ -1,5 +1,41 @@
 # dynetLSM: Bayesian inference for latent space models of dynamic networks
 
+Installation
+------------
+
+Dependencies
+------------
+dynetlsm requires:
+
+- Python (>= 2.7 or >= 3.4)
+- NumPy (>= 1.8.2)
+- SciPy (>= 0.13.3)
+- Scikit-learn (>=0.17)
+
+Additionally, to run examples, you need matplotlib(>=2.0.0).
+
+Installation
+------------
+You need a working installation of numpy and scipy to install dynetlsm. If you have a working installation of numpy and scipy, the easiest way to install dynetlsm is using ``pip``::
+
+```
+pip install -U dynetlsm
+```
+
+If you prefer, you can clone the repository and run the setup.py file. Use the following commands to get the copy from GitHub and install all the dependencies::
+
+```
+git clone https://github.com/joshloyal/dynetlsm.git
+cd dynetlsm
+pip install .
+```
+
+Or install using pip and GitHub::
+
+```
+pip install -U git+https://github.com/joshloyal/dynetlsm.git
+```
+
 Background
 ----------
 
@@ -89,41 +125,6 @@ lpcm_model.fit(Y)
 ```
 
 
-Installation
-------------
-
-Dependencies
-------------
-dynetlsm requires:
-
-- Python (>= 2.7 or >= 3.4)
-- NumPy (>= 1.8.2)
-- SciPy (>= 0.13.3)
-- Scikit-learn (>=0.17)
-
-Additionally, to run examples, you need matplotlib(>=2.0.0).
-
-Installation
-------------
-You need a working installation of numpy and scipy to install dynetlsm. If you have a working installation of numpy and scipy, the easiest way to install dynetlsm is using ``pip``::
-
-```
-pip install -U dynetlsm
-```
-
-If you prefer, you can clone the repository and run the setup.py file. Use the following commands to get the copy from GitHub and install all the dependencies::
-
-```
-git clone https://github.com/joshloyal/dynetlsm.git
-cd dynetlsm
-pip install .
-```
-
-Or install using pip and GitHub::
-
-```
-pip install -U git+https://github.com/joshloyal/dynetlsm.git
-```
 
 
 References:

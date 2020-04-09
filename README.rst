@@ -25,11 +25,18 @@ Bayesian inference for latent space model of dynamic networks
 Background
 ----------
 
+Latent space models (LSMs) are a powerful approach to modeling network data. The basic idea
+
+
 Example
 -------
 .. code-block:: python
 
-    print("Hello, world!")
+    from dynetlsm import DynamicNetworkHDPLPCM
+
+    model = DynamicNetworkHDPLPCM(n_features=2, n_components=10)
+    model.fit(Y)
+
 
 Installation
 ------------

@@ -203,7 +203,7 @@ for t, ax in enumerate(axes.flat):
 ```
 
 <p align="center">
-<img src="/images/hdp_lpcm_latent_space.png" alt="Latent Space of the HDP-LPCM" width="400">
+<img src="/images/hdp_lpcm_latent_space.png" alt="Latent Space of the HDP-LPCM" width="500">
 </p>
 
 

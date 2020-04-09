@@ -127,16 +127,16 @@ Example
 ```python
 from dynetlsm import DynamicNetworkLSM
 
-lsm_model = DynamicNetworkLSM(n_features=2)
-lsm_model.fit(Y)
+lsm = DynamicNetworkLSM(n_features=2)
+lsm.fit(Y)
 ```
 
 ```python
 
 from dynetlsm import DynamicNetworkHDPLPCM
 
-lpcm_model = DynamicNetworkHDPLPCM(n_features=2, n_components=10)
-lpcm_model.fit(Y)
+lpcm = DynamicNetworkHDPLPCM(n_features=2, n_components=10)
+lpcm.fit(Y)
 ```
 
 

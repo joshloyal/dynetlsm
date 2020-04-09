@@ -92,13 +92,3 @@ def approx_partial_loglikelihood(DOUBLE[:, :] X,
     loglik -= control_adj * control
 
     return loglik
-
-
-def approx_loglikelihood(DOUBLE[:, :] X,
-                         double intercept,
-                         INT[:, :] edges,
-                         INT[:] degrees,
-                         INT[:, :] control_nodes,
-                         int node_id,
-                         bint squared=False):
-    pass

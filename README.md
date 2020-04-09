@@ -42,7 +42,7 @@ Determining the high-level community structure of a network is another important
 1. Draw the time-varying transition probabilities for the HMMs from a sticky-HDP:
 
 <p align="center">
-<img src="/images/hdp.png" alt="latent positions prior" width="200">
+<img src="/images/hdp.png" alt="latent positions prior" width="300">
 </p>
 
 2. Draw a node's latent community labels according to an HMM:

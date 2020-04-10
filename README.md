@@ -21,24 +21,21 @@ BibTeX reference to cite, if you use this package:
 
 Dependencies
 ------------
-dynetlsm requires:
+DynetLSM requires:
 
-- Python (>= 2.7 or >= 3.4)
-- NumPy (>= 1.8.2)
-- SciPy (>= 0.13.3)
-- Scikit-learn (>=0.17)
+- Python (>= 3.6)
 
-Additionally, to run examples, you need matplotlib(>=2.0.0).
+and the requirements highlighted in [requirements.txt](requirements.txt).
 
 Installation
 ------------
-You need a working installation of numpy and scipy to install dynetlsm. If you have a working installation of numpy and scipy, the easiest way to install dynetlsm is using ``pip``::
+You need a working installation of numpy and scipy to install dynetlsm. If you have a working installation of numpy and scipy, the easiest way to install dynetlsm is using ``pip``:
 
 ```
 pip install -U dynetlsm
 ```
 
-If you prefer, you can clone the repository and run the setup.py file. Use the following commands to get the copy from GitHub and install all the dependencies::
+If you prefer, you can clone the repository and run the setup.py file. Use the following commands to get the copy from GitHub and install all the dependencies:
 
 ```
 git clone https://github.com/joshloyal/dynetlsm.git

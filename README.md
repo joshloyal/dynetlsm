@@ -2,7 +2,7 @@
 [![Travis](https://travis-ci.com/joshloyal/dynetlsm.svg?token=gTKqq3zSsip89mhYVQPZ&branch=master)](https://travis-ci.com/joshloyal/dynetlsm)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/joshloyal/dynetlsm)](https://ci.appveyor.com/project/joshloyal/dynetlsm/history)
 
-# DynetLSM: Latent space models for dynamic networks
+# DynetLSM: latent space models for dynamic networks
 
 This package provides an interface for learning and inference in latent
 space models for dynamic networks. Inference is performed using
@@ -59,7 +59,7 @@ Background
 ### Latent Space Models
 
 #### Static Networks
-Latent space models (LSMs) are a powerful approach to modeling network data. One is often interested in inferring properties of nodes in a network based on their connectivity patterns. Originally proposed by Hoff et al. (2002), LSMs learn a latent embedding for each node that captures the similarity between them. This package focuses on embeddings within a Euclidean space so that the log-odds of forming an edge between two nodes is inversely proportional to the distance between their latent positions. In other words, nodes that are close together in the latent space are more likely to form a connection in the observed network. The generative model is as follows:
+Latent space models (LSMs) are a powerful approach to modeling network data. One is often interested in inferring properties of nodes in a network based on their connectivity patterns. Originally proposed by Hoff et al. (2002) [1], LSMs learn a latent embedding for each node that captures the similarity between them. This package focuses on embeddings within a Euclidean space so that the log-odds of forming an edge between two nodes is inversely proportional to the distance between their latent positions. In other words, nodes that are close together in the latent space are more likely to form a connection in the observed network. The generative model is as follows:
 
 1. For each node, sample a node's latent position from a Gaussian distribution:
 
@@ -74,7 +74,7 @@ Latent space models (LSMs) are a powerful approach to modeling network data. One
 </p>
 
 #### Dynamic Networks
-For dynamic (time-varying) networks, one is also interested in determining how properties of the nodes change over time. LSMs can also accomplish this task. Sarkar and Moore (2005) and Sewell and Chen (2015) proposed propagating the latent positions through time with a Gaussian random-walk Markovian process. Based on these latent positions, the edges in the network form in the same way as the static case. The generative process is as follows:
+For dynamic (time-varying) networks, one is also interested in determining how properties of the nodes change over time. LSMs can also accomplish this task. Sarkar and Moore (2005) [2] and Sewell and Chen (2015) [3] proposed propagating the latent positions through time with a Gaussian random-walk Markovian process. Based on these latent positions, the edges in the network form in the same way as the static case. The generative process is as follows:
 
 1. For `t = 1`, sample a node's initial latent position from a Gaussian distribution:
 
@@ -99,7 +99,7 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 
 
 #### Static Networks
-Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007) with their latent position clustering model (LPCM). Intuitively, the LPCM posits that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
+Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007) [4] with their latent position clustering model (LPCM). Intuitively, the LPCM posits that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
 
 <p align="center">
 <img src="/images/lpcm.png" alt="latent positions prior" width="225">
@@ -108,9 +108,9 @@ Determining the high-level community structure of a network is another important
 The LPCM relates the latent positions to the probability of forming an edge in the same way as the original LSM. In practice, one interprets nodes that share the same mixture component as belonging to the same community.
 
 #### Dynamic Networks
-Inferring a network's community structure is especially difficult for dynamic networks because the number of communities may change over time. If one assumes that the number of communities is fixed, then the model of Sewell and Chen (2017) is able to infer a dynamic network's community structure by propagating each node's mixture assignment through time with a autoregressive hidden Markov model (AR-HMM). However, the assumption of a static number of communities is at odds with many real-world dynamic networks. It is often the case that the number of communities evolves over time.
+Inferring a network's community structure is especially difficult for dynamic networks because the number of communities may change over time. If one assumes that the number of communities is fixed, then the model of Sewell and Chen (2017) [5] is able to infer a dynamic network's community structure by propagating each node's mixture assignment through time with a autoregressive hidden Markov model (AR-HMM). However, the assumption of a static number of communities is at odds with many real-world dynamic networks. It is often the case that the number of communities evolves over time.
 
-To solve the problem of inferring evolving community structures in dynamic networks, Loyal and Chen (2020) proposed using a sticky hierarchical Dirichlet process hidden Markov model (HDP-HMM) with time-inhomogeneous transition probabilities in conjunction with the LPCM . For this reason, the model is called the hierarchical Dirichlet process latent position clustering model (HDP-LPCM). Under the HDP-LPCM, a node's latent community label propagate through time according to iid HDP-HMMs. Unlike previous models, this allows the HDP-LPCM to create and delete communities over-time as well as infer the number of the communities from the data. The generative model is as follows:
+To solve the problem of inferring evolving community structures in dynamic networks, Loyal and Chen (2020) [6] proposed using a sticky hierarchical Dirichlet process hidden Markov model (HDP-HMM) with time-inhomogeneous transition probabilities in conjunction with the LPCM . For this reason, the model is called the hierarchical Dirichlet process latent position clustering model (HDP-LPCM). Under the HDP-LPCM, a node's latent community label propagate through time according to iid HDP-HMMs. Unlike previous models, this allows the HDP-LPCM to create and delete communities over-time as well as infer the number of the communities from the data. The generative model is as follows:
 
 1. Draw the time-varying transition probabilities from a sticky-HDP:
 
@@ -147,8 +147,8 @@ Example
 -------
 DynetLSM exposes two classes for working with latent space models for dynamic networks:
 
-* `DynamicNetworkLSM`:  Interface for learning the LSM in Sewell and Chen (2015),
-* `DynamicNetworkHDPLPCM`: Interface for learning the HDP-LPCM in Loyal and Chen (2020).
+* `DynamicNetworkLSM`:  Interface for learning the LSM in Sewell and Chen (2015) [3],
+* `DynamicNetworkHDPLPCM`: Interface for learning the HDP-LPCM in Loyal and Chen (2020) [6].
 
 To understand the merits of both approaches, we provide an example using a synthetic dynamic network which contains two communities at `t = 1` and four communities at `t = 2`. We can generate the data as follows:
 ```python
@@ -252,15 +252,23 @@ From this diagram, one can see that group 1 primarily splits off into group 3, w
 
 Simulation Studies and Real-Data Applications
 ---------------------------------------------
-This package includes the simulation studies and real-data applications found in Loyal and Chen (2020):
+This package includes the simulation studies and real-data applications found in Loyal and Chen (2020) [6]:
 
 * A synthetic dynamic network with a time-homogeneous community structure: ([here](/examples/homogeneous_simulation.py)).
 * A synthetic dynamic network with a time-inhomogeneous community structure: ([here](/examples/inhomogeneous_simulation.py)).
 * Sampson's monastery network: ([here](/examples/sampson_monks.py)).
-* Dynamic network constructed from international military alliances during the first three decades of the Cold War (1950 - 1979): ([here](/examples/military_alliances.py)).
-* Character interactions in the first four seasons of the Game of Thrones television series: ([here](GoT.py)).
+* A dynamic network constructed from international military alliances during the first three decades of the Cold War (1950 - 1979): ([here](/examples/military_alliances.py)).
+* A dynamic network constructed from character interactions in the first four seasons of the Game of Thrones television series: ([here](/examples/GoT.py)).
 
-We also provide a few example [jupyter notebooks](/notebooks) that demonstrate the use of the package.
+We also provide a few [jupyter notebooks](/notebooks) that demonstrate the use of this package.
 
-References:
------------
+References
+----------
+
+[1]: Hoff, P. D., Raftery, A. E., and Handcock, M. S. (2002). Latent space approaches to social network analysis. *Journal of the American Statistical Association*, 97(460):1090-1098.
+[2]: Sarkar, P. and Moore, A. W. (2006). Dynamic social network analysis using latent space models. pages 1145-1152.
+[3]: Sewell, D. K. and Chen, Y. (2015). Latent space models for dynamic networks. *Journal of the American Statistical Association*, 110(512):1646-1657.
+[4]: Handcock, M. S., Raftery, A. E., and Tantrum, J. M. (2007). Model-based clustering of social networks. *Journal of the Royal Statistical Society A*, 170(2):301-354.
+[5]: Sewell, D. K. and Chen, Y. (2017). Latent space approaches to community detection in dynamic networks. *Bayesian Analysis*, 12(2):351-377.
+[6]: Loyal, J. D. and Chen, Y. (2020). A Bayesian nonparametric latent space approach to modeling evolving communities in dynamic networks. arXiv preprint arXiv:2003.07404.
+

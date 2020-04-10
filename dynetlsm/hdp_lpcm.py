@@ -375,7 +375,7 @@ class DynamicNetworkHDPLPCM(object):
     ----------
     [1] Loyal, Joshua D., and Chen, Yuguo (2020). "A Bayesian nonparametric
         latent space approach to modeling evolving communities in dynamic
-        networks", arXiv:2003.07404v1 [stat.ME].
+        networks", arXiv:2003.07404.
     [2] Hoff, P.D., Raftery, A. E., and Handcock, M.S. (2002). "Latent
         space approaches to social network analysis". Journal of the
         American Statistical Association, 97(460):1090-1098.

@@ -62,7 +62,7 @@ def case_control_init(Y, is_directed=False, n_samples=100):
 
     # store indices of edges, i.e. Y_ijt = 1
     max_in_degree = int(np.max(degree[:, :, 0]))
-    max_out_degree =  int(np.max(degree[:, :, 1]))
+    max_out_degree = int(np.max(degree[:, :, 1]))
     in_edges = np.zeros((n_time_steps, n_nodes, max_in_degree), dtype=np.int)
     out_edges = np.zeros((n_time_steps, n_nodes, max_out_degree), dtype=np.int)
     for t in range(n_time_steps):

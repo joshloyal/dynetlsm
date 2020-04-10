@@ -152,8 +152,8 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
         group_size = np.sum(group_mask)
         Xt[group_mask, :] = (
             sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
-                lmbda * mus[group_id] +
-                (1 - lmbda) * X[time_chunks - 1][group_mask, :]
+            lmbda * mus[group_id] +
+            (1 - lmbda) * X[time_chunks - 1][group_mask, :]
         )
     z.append(zt)
     X.append(Xt)
@@ -181,8 +181,8 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
             group_size = np.sum(zt == group_id + n_groups)
             Xt[group_mask, :] = (
                 sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
-                    lmbda * mus[group_id] +
-                    (1 - lmbda) * X[t-1][group_mask, :]
+                lmbda * mus[group_id] +
+                (1 - lmbda) * X[t-1][group_mask, :]
             )
         z.append(zt)
         X.append(Xt)
@@ -318,8 +318,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
         group_size = np.sum(group_mask)
         Xt[group_mask, :] = (
             sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
-                lmbda * mus[group_id] +
-                (1 - lmbda) * X[t - 1][group_mask, :]
+            lmbda * mus[group_id] +
+            (1 - lmbda) * X[t - 1][group_mask, :]
         )
     z.append(zt)
     X.append(Xt)
@@ -379,8 +379,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
         group_size = np.sum(group_mask)
         Xt[group_mask, :] = (
             sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
-                lmbda * old_mus[group_id] +
-                (1 - lmbda) * X[t - 1][group_mask, :]
+            lmbda * old_mus[group_id] +
+            (1 - lmbda) * X[t - 1][group_mask, :]
         )
     z.append(zt)
     X.append(Xt)

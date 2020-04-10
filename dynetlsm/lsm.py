@@ -54,6 +54,7 @@ def scale_intercept_mle(Y, X, squared=False, tol=1e-4):
         return -dynamic_network_loglikelihood_undirected(Y, X, intercept,
                                                          squared=squared,
                                                          dist=scaled_dist)
+
     def grad(x):
         scale, intercept = x[0], x[1]
         scaled_dist = np.exp(scale) * dist
@@ -82,7 +83,6 @@ def directed_intercept_mle(Y, X, radii, intercept_init=None, squared=False,
                                                        radii,
                                                        squared=squared,
                                                        dist=dist)
-
 
     def grad(x):
         intercept_in, intercept_out = x[0], x[1]
@@ -457,8 +457,7 @@ class DynamicNetworkLSM(object):
             self.intercept_samplers = [
                 Metropolis(step_size=self.step_size_intercept,
                            tune=self.tune, tune_interval=self.tune_interval,
-                           proposal_type='random_walk') for
-                           _ in range(2)]
+                           proposal_type='random_walk') for _ in range(2)]
         else:
             self.intercept_samplers = [
                 Metropolis(step_size=self.step_size_intercept, tune=self.tune,

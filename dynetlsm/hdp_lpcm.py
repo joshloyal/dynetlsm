@@ -340,7 +340,8 @@ class DynamicNetworkHDPLPCM(object):
         Inferred expected transition probabilities, i.e., the transition
         probabilities are drawn from a DP(alpha * beta) distribution.
 
-    coocurrence_probabilities_ : array-like, shape (n_time_steps, n_nodes, n_nodes)
+    coocurrence_probabilities_ : array-like,
+                                 shape (n_time_steps, n_nodes, n_nodes)
         The posterior cooccurrence probabilities at each time step. This
         is the probability that node i and node j are in the same community
         at time t.
@@ -699,7 +700,7 @@ class DynamicNetworkHDPLPCM(object):
 
             # cache new distances
             dist = (None if self.case_control_sampler_ else
-                        calculate_distances(X, squared=False))
+                    calculate_distances(X, squared=False))
 
             # sample intercepts
             intercept = sample_intercepts(
@@ -1089,7 +1090,7 @@ class DynamicNetworkHDPLPCM(object):
             else:
                 diff = X[t] - (1 - lmbda) * X[t-1] - lmbda * mu[z[t]]
             loglik += np.sum(-0.5 * np.log(sigma[z[t]]) -
-                              0.5 * np.sum(diff * diff, axis=1) / sigma[z[t]])
+                             0.5 * np.sum(diff * diff, axis=1) / sigma[z[t]])
 
         # cluster means log-likelihood
         for k in range(self.n_components):

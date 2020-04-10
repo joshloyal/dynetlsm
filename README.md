@@ -14,7 +14,7 @@ blocked Metropolis-Hastings within Gibbs sampling.
 The primary method implemented in this package is the hierarchical Dirichlet
 process latent position clustering model (HDP-LPCM) described in
 "A Bayesian nonparametric latent space approach to modeling evolving communities in
-dynamic networks" ([arXiv:2003.07404](https://arxiv.org/abs/2003.07404)).
+dynamic networks" [[arXiv:2003.07404](https://arxiv.org/abs/2003.07404)].
 
 BibTeX reference to cite, if you use this package:
 ```bibtex

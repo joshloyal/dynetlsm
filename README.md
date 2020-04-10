@@ -2,7 +2,7 @@
 
 This package provides an interface for learning and inference in latent
 space models for dynamic networks. Inference is performed using
-Blocked Metropolis-Hastings within Gibbs sampling.
+blocked Metropolis-Hastings within Gibbs sampling.
 
 The primary method implemented in this package is the hierarchical Dirichlet
 process latent postilion clustering model (HDP-LPCM) described in

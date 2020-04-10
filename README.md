@@ -59,7 +59,7 @@ Background
 ### Latent Space Models
 
 #### Static Networks
-Latent space models (LSMs) are a powerful approach to modeling network data. One is often interested in inferring properties of nodes in a network based on their connectivity patterns. Originally proposed by Hoff et al. (2002) [^1], LSMs learn a latent embedding for each node that captures the similarity between them. This package focuses on embeddings within a Euclidean space so that the log-odds of forming an edge between two nodes is inversely proportional to the distance between their latent positions. In other words, nodes that are close together in the latent space are more likely to form a connection in the observed network. The generative model is as follows:
+Latent space models (LSMs) are a powerful approach to modeling network data. One is often interested in inferring properties of nodes in a network based on their connectivity patterns. Originally proposed by Hoff et al. (2002) <sup>[[1]](#hoff-lsm)</sup>, LSMs learn a latent embedding for each node that captures the similarity between them. This package focuses on embeddings within a Euclidean space so that the log-odds of forming an edge between two nodes is inversely proportional to the distance between their latent positions. In other words, nodes that are close together in the latent space are more likely to form a connection in the observed network. The generative model is as follows:
 
 1. For each node, sample a node's latent position from a Gaussian distribution:
 
@@ -265,7 +265,7 @@ We also provide a few [jupyter notebooks](/notebooks) that demonstrate the use o
 References
 ----------
 
-[^1]: Hoff, P. D., Raftery, A. E., and Handcock, M. S. (2002). Latent space approaches to social network analysis. *Journal of the American Statistical Association*, 97(460):1090-1098.
+<a name="hoff-lsm">[1]</a>: Hoff, P. D., Raftery, A. E., and Handcock, M. S. (2002). Latent space approaches to social network analysis. *Journal of the American Statistical Association*, 97(460):1090-1098.
 
 [^2]: Sarkar, P. and Moore, A. W. (2006). Dynamic social network analysis using latent space models. pages 1145-1152.
 

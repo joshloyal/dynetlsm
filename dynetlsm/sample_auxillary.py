@@ -21,7 +21,8 @@ def sample_tables(n, beta, alpha_init, alpha, kappa, random_state=None):
     for t in range(1, n_time_steps):
         for j in range(n_components):
             for k in range(n_components):
-                x = rng.binomial(1, probas[j, k] / (probas[j, k] + np.arange(n[t, j, k])))
+                x = rng.binomial(
+                    1, probas[j, k] / (probas[j, k] + np.arange(n[t, j, k])))
                 m[t, j, k] = np.sum(x)
 
     return m
@@ -38,7 +39,6 @@ def sample_mbar(m, beta, kappa=1.0, alpha=1.0, random_state=None):
         for j in range(n_components):
             w[t, j] = rng.binomial(m[t + 1, j, j],
                                    rho / (rho + beta[j] * (1 - rho)))
-
 
     # mbar is determined by m and w
     m_bar = np.zeros((n_time_steps - 1, n_components, n_components),

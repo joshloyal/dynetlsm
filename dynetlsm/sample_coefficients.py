@@ -22,24 +22,24 @@ def sample_intercepts(Y, X, intercepts, intercept_prior,
                 # TODO: we do not cache distances here, decrease by
                 #       factor of 2 if we do this
                 loglik = approx_directed_network_loglikelihood(
-                            X=X,
-                            radii=radii,
-                            in_edges=case_control_sampler.in_edges_,
-                            out_edges=case_control_sampler.out_edges_,
-                            degree=case_control_sampler.degrees_,
-                            control_nodes=case_control_sampler.control_nodes_out_,
-                            intercept_in=x[0],
-                            intercept_out=intercepts[1],
-                            squared=squared)
+                    X=X,
+                    radii=radii,
+                    in_edges=case_control_sampler.in_edges_,
+                    out_edges=case_control_sampler.out_edges_,
+                    degree=case_control_sampler.degrees_,
+                    control_nodes=case_control_sampler.control_nodes_out_,
+                    intercept_in=x[0],
+                    intercept_out=intercepts[1],
+                    squared=squared)
             else:
                 loglik = dynamic_network_loglikelihood_directed(
-                            Y, X,
-                            intercept_in=x[0], intercept_out=intercepts[1],
-                            radii=radii,
-                            squared=squared,
-                            dist=dist)
+                    Y, X,
+                    intercept_in=x[0], intercept_out=intercepts[1],
+                    radii=radii,
+                    squared=squared,
+                    dist=dist)
             loglik -= ((x[0] - intercept_prior[0]) ** 2 /
-                        (2 * intercept_variance_prior))
+                       (2 * intercept_variance_prior))
             return loglik
 
         intercepts[0] = samplers[0].step(
@@ -51,24 +51,24 @@ def sample_intercepts(Y, X, intercepts, intercept_prior,
                 # TODO: we do not cache distances here, decrease by
                 #       factor of 2 if we do this
                 loglik = approx_directed_network_loglikelihood(
-                            X=X,
-                            radii=radii,
-                            in_edges=case_control_sampler.in_edges_,
-                            out_edges=case_control_sampler.out_edges_,
-                            degree=case_control_sampler.degrees_,
-                            control_nodes=case_control_sampler.control_nodes_out_,
-                            intercept_in=intercepts[0],
-                            intercept_out=x[0],
-                            squared=squared)
+                    X=X,
+                    radii=radii,
+                    in_edges=case_control_sampler.in_edges_,
+                    out_edges=case_control_sampler.out_edges_,
+                    degree=case_control_sampler.degrees_,
+                    control_nodes=case_control_sampler.control_nodes_out_,
+                    intercept_in=intercepts[0],
+                    intercept_out=x[0],
+                    squared=squared)
             else:
                 loglik = dynamic_network_loglikelihood_directed(
-                            Y, X,
-                            intercept_in=intercepts[0], intercept_out=x[0],
-                            radii=radii,
-                            squared=squared,
-                            dist=dist)
+                    Y, X,
+                    intercept_in=intercepts[0], intercept_out=x[0],
+                    radii=radii,
+                    squared=squared,
+                    dist=dist)
             loglik -= ((x[0] - intercept_prior[1]) ** 2 /
-                        (2 * intercept_variance_prior))
+                       (2 * intercept_variance_prior))
             return loglik
 
         intercepts[1] = samplers[1].step(
@@ -80,7 +80,7 @@ def sample_intercepts(Y, X, intercepts, intercept_prior,
                                                               squared=squared,
                                                               dist=dist)
             loglik -= ((x - intercept_prior) ** 2 /
-                        (2 * intercept_variance_prior))
+                       (2 * intercept_variance_prior))
             return loglik
 
         intercepts = samplers[0].step(intercepts, logp, rng)

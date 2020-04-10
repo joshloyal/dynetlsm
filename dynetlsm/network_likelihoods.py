@@ -23,7 +23,8 @@ def dynamic_network_loglikelihood_directed(Y, X,
 
 
 # TODO: mask nan entries
-def dynamic_network_loglikelihood_undirected(Y, X, intercept, squared=False, dist=None):
+def dynamic_network_loglikelihood_undirected(Y, X, intercept, squared=False,
+                                             dist=None):
     dist = calculate_distances(X, squared=squared) if dist is None else dist
 
     triu_indices = triu_indices_from_3d(dist, k=1)

@@ -93,9 +93,6 @@ class Metropolis(object):
         self.n_accepted = 0
         self.n_steps = 0
 
-        #if self.proposal_type == 'dirichlet' and self.tune is not None:
-        #    raise ValueError("Tuning only supported for random walk propsals")
-
     def step(self, x, logp, random_state):
         if self.proposal_type == 'dirichlet':
             x_new, accepted, _ = dirichlet_metropolis(x,

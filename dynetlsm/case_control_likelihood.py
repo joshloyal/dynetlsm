@@ -50,7 +50,7 @@ class DirectedCaseControlSampler(CaseControlSampler):
 
         # store indices of edges, i.e. Y_ijt = 1
         max_in_degree = int(np.max(self.degrees_[:, :, 0]))
-        max_out_degree =  int(np.max(self.degrees_[:, :, 1]))
+        max_out_degree = int(np.max(self.degrees_[:, :, 1]))
         self.in_edges_ = np.zeros((n_time_steps, n_nodes, max_in_degree),
                                   dtype=np.int)
         self.out_edges_ = np.zeros((n_time_steps, n_nodes, max_out_degree),
@@ -76,10 +76,10 @@ class DirectedCaseControlSampler(CaseControlSampler):
         rng = check_random_state(self.random_state)
         n_time_steps, n_nodes, _ = self.out_edges_.shape
 
-        control_nodes_out = np.full((n_time_steps, n_nodes, self.n_control_), -1.0,
-                                    dtype=np.int)
-        control_nodes_in =  np.full((n_time_steps, n_nodes, self.n_control_), -1.0,
-                                    dtype=np.int)
+        control_nodes_out = np.full((n_time_steps, n_nodes, self.n_control_),
+                                    -1.0, dtype=np.int)
+        control_nodes_in = np.full((n_time_steps, n_nodes, self.n_control_),
+                                   -1.0, dtype=np.int)
         for t in range(n_time_steps):
             for i in range(n_nodes):
                 out_degree = self.degrees_[t, i, 1]
@@ -91,7 +91,7 @@ class DirectedCaseControlSampler(CaseControlSampler):
 
                 edges = set.difference(
                     set(range(n_nodes)),
-                        self.out_edges_[t, i, :out_degree].tolist() + [i])
+                    self.out_edges_[t, i, :out_degree].tolist() + [i])
                 control_nodes_out[t, i, :n_sample] = rng.choice(list(edges),
                                                                 size=n_sample,
                                                                 replace=False)
@@ -105,7 +105,7 @@ class DirectedCaseControlSampler(CaseControlSampler):
 
                 edges = set.difference(
                     set(range(n_nodes)),
-                        self.in_edges_[t, i, :in_degree].tolist() + [i])
+                    self.in_edges_[t, i, :in_degree].tolist() + [i])
                 control_nodes_in[t, i, :n_sample] = rng.choice(list(edges),
                                                                size=n_sample,
                                                                replace=False)
@@ -129,7 +129,7 @@ class MissingDirectedCaseControlSampler(CaseControlSampler):
 
         # store indices of edges, i.e. Y_ijt = 1
         max_in_degree = int(np.max(self.degrees_[:, :, 0]))
-        max_out_degree =  int(np.max(self.degrees_[:, :, 1]))
+        max_out_degree = int(np.max(self.degrees_[:, :, 1]))
         self.in_edges_ = np.zeros((n_time_steps, n_nodes, max_in_degree),
                                   dtype=np.int)
         self.out_edges_ = np.zeros((n_time_steps, n_nodes, max_out_degree),
@@ -168,7 +168,7 @@ class MissingDirectedCaseControlSampler(CaseControlSampler):
         for i in range(n_nodes):
             # stratify sample based one connections vs. non-connections
             n_connected = int(self.edge_list_[i].shape[0] / n_nodes *
-                                self.n_control_)
+                              self.n_control_)
             if self.edge_list_[i].shape[0] > 0:
                 n_connected = max(n_connected, 1)
 

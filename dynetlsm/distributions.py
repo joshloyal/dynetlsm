@@ -76,6 +76,7 @@ def truncated_normal(mean, var, lower=0, upper=1, size=1, random_state=None):
     return truncnorm.rvs(a, b, size=size, loc=mean, scale=std,
                          random_state=random_state)
 
+
 def truncated_normal_logpdf(x, mean, var, lower=0, upper=1):
     std = np.sqrt(var)
     a = (lower - mean) / std

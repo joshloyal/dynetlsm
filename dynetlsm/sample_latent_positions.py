@@ -29,9 +29,9 @@ def sample_control_nodes(edge_list, n_samples=100, random_state=None):
 
         edges = set.difference(
             set(range(n_nodes)), edge_list[i].tolist() + [i])
-        control_nodes[i, n_connected:] = rng.choice(list(edges),
-                                                    size=n_samples - n_connected,
-                                                    replace=False)
+        control_nodes[i, n_connected:] = rng.choice(
+            list(edges), size=n_samples - n_connected, replace=False)
+
     return control_nodes
 
 
@@ -102,17 +102,19 @@ def sample_latent_positions(Y, X, intercept, tau_sq, sigma_sq, samplers,
                 if is_directed:
                     if case_control_sampler is not None:
                         loglik = approx_directed_partial_loglikelihood(
-                                    X[t],
-                                    radii=radii,
-                                    in_edges=case_control_sampler.in_edges_[t],
-                                    out_edges=case_control_sampler.out_edges_[t],
-                                    degree=case_control_sampler.degrees_[t],
-                                    control_nodes_in=case_control_sampler.control_nodes_in_[t],
-                                    control_nodes_out=case_control_sampler.control_nodes_out_[t],
-                                    intercept_in=intercept[0],
-                                    intercept_out=intercept[1],
-                                    node_id=j,
-                                    squared=squared)
+                            X[t],
+                            radii=radii,
+                            in_edges=case_control_sampler.in_edges_[t],
+                            out_edges=case_control_sampler.out_edges_[t],
+                            degree=case_control_sampler.degrees_[t],
+                            control_nodes_in=(
+                                case_control_sampler.control_nodes_in_[t]),
+                            control_nodes_out=(
+                                case_control_sampler.control_nodes_out_[t]),
+                            intercept_in=intercept[0],
+                            intercept_out=intercept[1],
+                            node_id=j,
+                            squared=squared)
                     else:
                         loglik = directed_partial_loglikelihood(
                                     Y[t], X[t],
@@ -144,9 +146,10 @@ def sample_latent_positions(Y, X, intercept, tau_sq, sigma_sq, samplers,
     return X
 
 
-def sample_latent_positions_mixture(Y, X, intercept, mu, sigma, lmbda, z, samplers,
-                                    radii=None, is_directed=False, squared=None,
-                                    case_control_sampler=None, random_state=None):
+def sample_latent_positions_mixture(Y, X, intercept, mu, sigma, lmbda, z,
+                                    samplers, radii=None, is_directed=False,
+                                    squared=None, case_control_sampler=None,
+                                    random_state=None):
     rng = check_random_state(random_state)
     n_time_steps, n_nodes, _ = Y.shape
 
@@ -157,17 +160,19 @@ def sample_latent_positions_mixture(Y, X, intercept, mu, sigma, lmbda, z, sample
                 if is_directed:
                     if case_control_sampler:
                         loglik = approx_directed_partial_loglikelihood(
-                                    X[t],
-                                    radii=radii,
-                                    in_edges=case_control_sampler.in_edges_[t],
-                                    out_edges=case_control_sampler.out_edges_[t],
-                                    degree=case_control_sampler.degrees_[t],
-                                    control_nodes_in=case_control_sampler.control_nodes_in_[t],
-                                    control_nodes_out=case_control_sampler.control_nodes_out_[t],
-                                    intercept_in=intercept[0],
-                                    intercept_out=intercept[1],
-                                    node_id=j,
-                                    squared=squared)
+                            X[t],
+                            radii=radii,
+                            in_edges=case_control_sampler.in_edges_[t],
+                            out_edges=case_control_sampler.out_edges_[t],
+                            degree=case_control_sampler.degrees_[t],
+                            control_nodes_in=(
+                                case_control_sampler.control_nodes_in_[t]),
+                            control_nodes_out=(
+                                case_control_sampler.control_nodes_out_[t]),
+                            intercept_in=intercept[0],
+                            intercept_out=intercept[1],
+                            node_id=j,
+                            squared=squared)
                     else:
                         loglik = directed_partial_loglikelihood(
                                     Y[t], X[t],
@@ -190,9 +195,8 @@ def sample_latent_positions_mixture(Y, X, intercept, mu, sigma, lmbda, z, sample
                 # prior P(X_{t+1} | X_t)
                 if t < (n_time_steps - 1):
                     diff = (X[t+1, j] - (1 - lmbda) * x -
-                                lmbda * mu[z[t+1, j]])
+                            lmbda * mu[z[t+1, j]])
                     loglik -= 0.5 * np.sum(diff * diff) / sigma[z[t+1, j]]
-
 
                 return loglik
 

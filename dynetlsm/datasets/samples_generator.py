@@ -77,7 +77,6 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
     sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
                                     size=n_groups_total))
 
-
     # initial groups
     mus = all_mus[:2].copy()
     n_groups = mus.shape[0]
@@ -104,7 +103,7 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
     for group_id in range(n_groups):
         group_size = np.sum(z0 == group_id)
         X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_size, 2) +
-                                    mus[group_id])
+                                 mus[group_id])
     X.append(X0)
     z.append(z0)
 
@@ -154,7 +153,7 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
         Xt[group_mask, :] = (
             sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
                 lmbda * mus[group_id] +
-                    (1 - lmbda) * X[time_chunks - 1][group_mask,:]
+                (1 - lmbda) * X[time_chunks - 1][group_mask, :]
         )
     z.append(zt)
     X.append(Xt)
@@ -183,7 +182,7 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
             Xt[group_mask, :] = (
                 sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
                     lmbda * mus[group_id] +
-                        (1 - lmbda) * X[t-1][group_mask, :]
+                    (1 - lmbda) * X[t-1][group_mask, :]
             )
         z.append(zt)
         X.append(Xt)
@@ -244,7 +243,6 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
                                     size=n_groups_total))
 
-
     # initial groups
     mus = all_mus[:2].copy()
     n_groups = mus.shape[0]
@@ -271,7 +269,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     for group_id in range(n_groups):
         group_size = np.sum(z0 == group_id)
         X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_size, 2) +
-                                    mus[group_id])
+                                 mus[group_id])
     X.append(X0)
     z.append(z0)
 
@@ -321,7 +319,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
         Xt[group_mask, :] = (
             sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
                 lmbda * mus[group_id] +
-                    (1 - lmbda) * X[t - 1][group_mask,:]
+                (1 - lmbda) * X[t - 1][group_mask, :]
         )
     z.append(zt)
     X.append(Xt)
@@ -349,8 +347,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
             group_size = np.sum(zt == group_id + n_groups)
             Xt[group_mask, :] = (
                 sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
-                    lmbda * mus[group_id] +
-                        (1 - lmbda) * X[t-1][group_mask, :]
+                lmbda * mus[group_id] +
+                (1 - lmbda) * X[t-1][group_mask, :]
             )
         z.append(zt)
         X.append(Xt)
@@ -364,7 +362,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
         wt_merge = 1. / pairwise_distances(old_mus, mus)
     infinite_mask = ~np.isfinite(wt_merge)
     wt_merge[infinite_mask] = 0
-    wt_merge[infinite_mask] = sticky_const * np.max(wt_merge, axis=1)[[0, 1, 4, 5]]
+    wt_merge[infinite_mask] = (
+        sticky_const * np.max(wt_merge, axis=1)[[0, 1, 4, 5]])
     wt_merge /= wt_merge.sum(axis=1).reshape(-1, 1)
 
     zt = np.zeros(n_nodes, dtype=np.int)
@@ -381,7 +380,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
         Xt[group_mask, :] = (
             sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
                 lmbda * old_mus[group_id] +
-                    (1 - lmbda) * X[t - 1][group_mask,:]
+                (1 - lmbda) * X[t - 1][group_mask, :]
         )
     z.append(zt)
     X.append(Xt)
@@ -409,8 +408,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
             group_size = np.sum(zt == group_id)
             Xt[group_mask, :] = (
                 sigmas[group_id] * rng.randn(group_size, 2) +
-                    lmbda * all_mus[group_id] +
-                        (1 - lmbda) * X[t-1][group_mask, :]
+                lmbda * all_mus[group_id] +
+                (1 - lmbda) * X[t-1][group_mask, :]
             )
 
         z.append(zt)

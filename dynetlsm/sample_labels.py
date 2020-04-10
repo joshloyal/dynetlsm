@@ -5,7 +5,6 @@ from .gaussian_likelihood_fast import compute_gaussian_likelihood
 from .distributions import spherical_normal_log_pdf
 
 
-
 def log_normalize(probas):
     max_proba = np.max(probas)
     probas -= max_proba
@@ -45,16 +44,16 @@ def sample_labels_gibbs(X, mu, sigma, lmbda, w, random_state=None):
             if t == 0:
                 for k in range(n_components):
                     probas[k] = (np.log(w[0, 0, k] + 1e-5) +
-                                    spherical_normal_log_pdf(X[t, i],
-                                                             mu[k],
-                                                             sigma[k]))
+                                 spherical_normal_log_pdf(X[t, i],
+                                                          mu[k],
+                                                          sigma[k]))
             else:
                 for k in range(n_components):
                     probas[k] = (np.log(w[t, z[t-1, i], k] + 1e-5) +
-                                    spherical_normal_log_pdf(
-                                        X[t, i],
-                                        lmbda * mu[k] - (1 - lmbda) * X[t-1, i],
-                                        sigma[k]))
+                                 spherical_normal_log_pdf(
+                                    X[t, i],
+                                    lmbda * mu[k] - (1 - lmbda) * X[t-1, i],
+                                    sigma[k]))
 
             # sample zt
             probas = log_normalize(probas)

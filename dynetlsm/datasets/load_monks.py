@@ -31,7 +31,7 @@ def load_dynamic_monks(encode_labels=True, include_waverers=False,
                                'sampson_{}.npy'.format(t)))
     # load groups
     file_name = ('sampson_groups_waverers.txt' if include_waverers else
-                    'sampson_groups.txt')
+                 'sampson_groups.txt')
 
     with open(join(module_path, 'raw_data', file_name)) as f:
         groups = np.array([l.rstrip('\n') for l in f.readlines()])
@@ -57,7 +57,7 @@ def load_static_monks(encode_labels=True, include_waverers=False,
 
     # load groups
     file_name = ('sampson_groups_waverers.txt' if include_waverers else
-                    'sampson_groups.txt')
+                 'sampson_groups.txt')
     with open(join(module_path, 'raw_data', file_name)) as f:
         groups = np.array([l.rstrip('\n') for l in f.readlines()])
 

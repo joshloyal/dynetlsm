@@ -54,7 +54,6 @@ def scale_intercept_mle(Y, X, squared=False, tol=1e-4):
         return -dynamic_network_loglikelihood_undirected(Y, X, intercept,
                                                          squared=squared,
                                                          dist=scaled_dist)
-
     def grad(x):
         scale, intercept = x[0], x[1]
         scaled_dist = np.exp(scale) * dist
@@ -311,7 +310,7 @@ class DynamicNetworkLSM(object):
     @property
     def auc_(self):
         """In-sample AUC of the final estimated model."""
-        ## FIXME: This should mask nan values
+        # FIXME: This should mask nan values
         if not hasattr(self, 'X_'):
             raise ValueError('Model not fit.')
         return network_auc(self.Y_fit_, self.probas_,
@@ -465,7 +464,6 @@ class DynamicNetworkLSM(object):
                 Metropolis(step_size=self.step_size_intercept, tune=self.tune,
                            proposal_type='random_walk')]
 
-
         if self.is_directed:
             self.radii_sampler = Metropolis(step_size=self.step_size_radii,
                                             tune=None,
@@ -502,7 +500,7 @@ class DynamicNetworkLSM(object):
 
             # cache new distances
             dist = (None if self.case_control_sampler_ else
-                        calculate_distances(X, squared=False))
+                    calculate_distances(X, squared=False))
 
             # sample intercepts
             intercept = sample_intercepts(
@@ -543,7 +541,6 @@ class DynamicNetworkLSM(object):
                     Y_new[triu_indices] = self.Y_fit_[triu_indices]
                     Y_new[triu_indices][nan_mask] = rng.binomial(1, expit(eta))
                     self.Y_fit_ = Y_new + np.transpose(Y_new, axes=(0, 2, 1))
-
 
             # check if current MAP
             if self.is_directed:

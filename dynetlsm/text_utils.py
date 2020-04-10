@@ -2,9 +2,9 @@ import numpy as np
 import networkx as nx
 
 
-def repel_labels(X, node_names, datasize, k=1.0, textsize=10, mask=None, ax=None):
+def repel_labels(X, node_names, datasize, k=1.0, textsize=10, mask=None,
+                 ax=None):
     G = nx.DiGraph()
-
 
     data_nodes = []
     init_pos = {}

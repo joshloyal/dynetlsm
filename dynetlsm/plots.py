@@ -53,6 +53,7 @@ def get_color20():
 
     return colors
 
+
 def get_husl(n_groups):
     colors = sns.color_palette('husl', n_colors=n_groups)
     return np.asarray([to_hex(c) for c in colors])
@@ -208,8 +209,6 @@ def plot_traces_lsm(model, figsize=(10, 6), maxlags=100, fontsize=8):
     if n_burn > 0:
         ax[0, 0].axvline(n_burn, linestyle='--',  color='k', alpha=0.7)
         ax[0, 0].annotate(' burn-in', (n_burn, np.min(model.logps_)), alpha=0.7)
-
-
 
     if model.is_directed:
         sns.kdeplot(model.intercepts_[n_burn:, 0].ravel(), ax=ax[1, 0],
@@ -393,8 +392,8 @@ def plot_traces_hdp_lpcm(model, figsize=(10, 12), maxlags=100, fontsize=8):
 
 
 def plot_posterior_counts(model, t=0, bar_width=0.25, normalize=True,
-                         fontsize=16, ticksize=14, figsize=(10, 6),
-                         include_title=True):
+                          fontsize=16, ticksize=14, figsize=(10, 6),
+                          include_title=True):
     fig, ax = plt.subplots(figsize=figsize)
 
     freq = model.posterior_group_counts_[t]
@@ -452,7 +451,7 @@ def plot_transition_probabilities(model, figsize=(10, 8), fontsize=8,
     beta[beta < zero_threshold] = 0.0
     sns.heatmap(beta, cmap='rocket_r', linewidths=10.0, square=True,
                 cbar=False, yticklabels=False, vmin=0.0, vmax=1.0, annot=True,
-                annot_kws={"fontsize" : 8}, ax=ax[0, param_start],
+                annot_kws={"fontsize": 8}, ax=ax[0, param_start],
                 xticklabels=text_map if text_map else 'auto')
     ax[0, param_start].set_title(r'$\beta$')
 
@@ -465,7 +464,7 @@ def plot_transition_probabilities(model, figsize=(10, 8), fontsize=8,
 
     sns.heatmap(w, cmap='rocket_r', linewidths=10.0, square=True,
                 cbar=False, vmin=0.0, vmax=1.0, yticklabels=False,
-                annot=True, annot_kws={"fontsize" : 8}, mask=mask,
+                annot=True, annot_kws={"fontsize": 8}, mask=mask,
                 ax=ax[0, param_start + 1],
                 xticklabels=text_map if text_map else 'auto')
     ax[0, param_start + 1].set_title(r'$p(z_0)$')
@@ -482,12 +481,13 @@ def plot_transition_probabilities(model, figsize=(10, 8), fontsize=8,
         w[w < zero_threshold] = 0.0
         active_clusters = np.unique(model.z_[t])
         mask = np.ones_like(w)
-        ind = np.array(list(itertools.product(active_clusters, active_clusters)))
+        ind = np.array(
+            list(itertools.product(active_clusters, active_clusters)))
         mask[ind[:, 0], ind[:, 1]] = 0.0
 
         sns.heatmap(w, cmap='rocket_r', linewidths=10.0, square=True,
                     cbar=False, vmin=0.0, vmax=1.0, mask=mask,
-                    annot=True, annot_kws={"fontsize" : param_fontsize},
+                    annot=True, annot_kws={"fontsize": param_fontsize},
                     xticklabels=text_map if text_map else 'auto',
                     yticklabels=text_map if text_map else 'auto',
                     ax=ax[row_id, col_id])
@@ -575,8 +575,8 @@ def plot_latent_space_lsm(model, t=0,
     for ts in range(model.Y_fit_.shape[0]):
         if only_show_connected:
             mask_t = connected_nodes(model.Y_fit_[ts],
-                                   is_directed=model.is_directed,
-                                   size_cutoff=size_cutoff)
+                                     is_directed=model.is_directed,
+                                     size_cutoff=size_cutoff)
         else:
             mask_t = np.arange(model.Y_fit_.shape[1])
 
@@ -608,20 +608,20 @@ def plot_latent_space_lsm(model, t=0,
 
             if model.is_directed:
                 arrow_patch(x1, x2, sizes[i], sizes[j], ax,
-                           alpha=alpha,
-                           connectionstyle=connectionstyle,
-                           linewidth=linewidth,
-                           mutation_scale=mutation_scale,
-                           arrowstyle=arrowstyle,
-                           zorder=1)
+                            alpha=alpha,
+                            connectionstyle=connectionstyle,
+                            linewidth=linewidth,
+                            mutation_scale=mutation_scale,
+                            arrowstyle=arrowstyle,
+                            zorder=1)
             else:
                 arrow_patch(x1, x2, sizes, sizes, ax,
-                           alpha=alpha,
-                           connectionstyle=connectionstyle,
-                           linewidth=linewidth,
-                           mutation_scale=mutation_scale,
-                           arrowstyle='-',
-                           zorder=1)
+                            alpha=alpha,
+                            connectionstyle=connectionstyle,
+                            linewidth=linewidth,
+                            mutation_scale=mutation_scale,
+                            arrowstyle='-',
+                            zorder=1)
 
     ax.scatter(X[t, mask, 0], X[t, mask, 1],
                alpha=alpha,
@@ -703,8 +703,8 @@ def plot_latent_space_lpcm(model, t=0, estimate_type='best',
     for ts in range(model.Y_fit_.shape[0]):
         if only_show_connected:
             mask_t = connected_nodes(model.Y_fit_[ts],
-                                   is_directed=model.is_directed,
-                                   size_cutoff=size_cutoff)
+                                     is_directed=model.is_directed,
+                                     size_cutoff=size_cutoff)
         else:
             mask_t = np.arange(model.Y_fit_.shape[1])
 
@@ -736,22 +736,22 @@ def plot_latent_space_lpcm(model, t=0, estimate_type='best',
 
             if model.is_directed:
                 arrow_patch(x1, x2, sizes[i], sizes[j], ax,
-                           color=colors[encoder.transform([z[t, i]])[0]],
-                           alpha=alpha,
-                           connectionstyle=connectionstyle,
-                           linewidth=linewidth,
-                           mutation_scale=mutation_scale,
-                           arrowstyle=arrowstyle,
-                           zorder=1)
+                            color=colors[encoder.transform([z[t, i]])[0]],
+                            alpha=alpha,
+                            connectionstyle=connectionstyle,
+                            linewidth=linewidth,
+                            mutation_scale=mutation_scale,
+                            arrowstyle=arrowstyle,
+                            zorder=1)
             else:
                 arrow_patch(x1, x2, sizes, sizes, ax,
-                           color=colors[encoder.transform([z[t, i]])[0]],
-                           alpha=alpha,
-                           connectionstyle=connectionstyle,
-                           linewidth=linewidth,
-                           mutation_scale=mutation_scale,
-                           arrowstyle='-',
-                           zorder=1)
+                            color=colors[encoder.transform([z[t, i]])[0]],
+                            alpha=alpha,
+                            connectionstyle=connectionstyle,
+                            linewidth=linewidth,
+                            mutation_scale=mutation_scale,
+                            arrowstyle='-',
+                            zorder=1)
 
     ax.scatter(X[t, mask, 0], X[t, mask, 1],
                c=colors[encoder.transform(z[t, mask])],
@@ -764,7 +764,6 @@ def plot_latent_space_lpcm(model, t=0, estimate_type='best',
     if number_nodes:
         repel_labels(X[t], node_names, datasize=sizes, k=repel_strength,
                      textsize=node_textsize, mask=mask, ax=ax)
-
 
     # annotate group number
     for k in np.unique(z[t, mask]):
@@ -914,11 +913,11 @@ def alluvial_plot(z, figsize=(10, 6), margin=0.01, rec_width=0.01, alpha=0.5,
 
                     # top curve
                     y_end = ((freq_to[group_id_from, group_id_to] *
-                                rec_extents[t + 1, group_id_to]) +
-                                height_end[group_id_to])
+                              rec_extents[t + 1, group_id_to]) +
+                             height_end[group_id_to])
                     y_start = ((freq_from[group_id_from, group_id_to] *
                                 rec_extents[t, group_id_from]) +
-                                y_start)
+                               y_start)
                     y = np.array([y_start, (y_start + y_end) / 2., y_end])
                     f_top = CubicSpline(x, y, bc_type='clamped')
 
@@ -997,10 +996,10 @@ def plot_adjacency_matrix(Y, z, figsize=(8, 6)):
     group_ids = np.unique(z)
     for k in group_ids:
         idx = np.where(z[order] == k)[0][-1]
-        if k < group_ids[-1]: # don't draw last line
+        if k < group_ids[-1]:  # don't draw last line
             plt.vlines(idx + 0.5, 0, Y.shape[0], linewidth=0.5)
 
-        if k < group_ids[-1]: # don't draw last line
+        if k < group_ids[-1]:  # don't draw last line
             plt.hlines(idx + 0.5, 0, Y.shape[0], linewidth=0.5)
 
     ax.set_xlim(0, Y.shape[0] - 0.5)

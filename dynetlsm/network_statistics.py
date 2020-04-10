@@ -54,7 +54,7 @@ def static_modularity(Y, z, is_directed=False):
     groups = encoder.transform(z)
     n_groups = encoder.classes_.shape[0]
 
-    A =  0.5 * (Y + Y.T) if is_directed else Y
+    A = 0.5 * (Y + Y.T) if is_directed else Y
     B = A - np.dot(degree, degree.T) / (2 * n_edges)
     S = np.eye(n_groups)[groups.astype(np.int)]
 

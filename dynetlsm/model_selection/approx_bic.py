@@ -68,7 +68,7 @@ def latent_marginal_loglikelihood(X, init_w, trans_w, mu, sigma, lmbda):
 
         for t in range(1, n_time_steps):
             fwds_msg = (gauss_loglik[t] *
-                            np.dot(trans_w[t].T, fwds_msg.reshape(-1, 1)).ravel())
+                        np.dot(trans_w[t].T, fwds_msg.reshape(-1, 1)).ravel())
             c = np.sum(fwds_msg)
             loglik += np.log(c)
             fwds_msg /= c
@@ -115,7 +115,6 @@ def select_bic(model):
             trans_w[t] = weights[t, active_clusters][:, active_clusters]
             trans_w[t] /= np.sum(trans_w[t], axis=1).reshape(-1, 1)
 
-
         # filter cluster components
         mu = mu[active_clusters]
         sigma = sigma[active_clusters]
@@ -133,13 +132,15 @@ def select_bic(model):
             nondiag_indices = nondiag_indices_from_3d(model.Y_fit_)
             bic_k += n_params * np.log(np.sum(model.Y_fit_[nondiag_indices]))
         else:
-            loglik_k = dynamic_network_loglikelihood_undirected(model.Y_fit_, X, intercept)
+            loglik_k = dynamic_network_loglikelihood_undirected(
+                model.Y_fit_, X, intercept)
             bic_k = -2 * loglik_k
-            bic_k += np.log(0.5 * (np.sum(model.Y_fit_) - np.einsum('ikk', model.Y_fit_).sum()))
+            bic_k += np.log(0.5 * (
+                np.sum(model.Y_fit_) - np.einsum('ikk', model.Y_fit_).sum()))
 
         # BIC component for P(X | G) = P(X | mu, sigma, w)
-        bic_k -= 2 * latent_marginal_loglikelihood(X, init_w, trans_w, mu, sigma,
-                                                   lmbda)
+        bic_k -= 2 * latent_marginal_loglikelihood(
+            X, init_w, trans_w, mu, sigma, lmbda)
 
         n_params = ((model.n_features + 1) * k +        # cluster params
                     (k - 1) +                           # beta

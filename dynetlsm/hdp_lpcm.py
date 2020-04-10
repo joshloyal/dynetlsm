@@ -129,7 +129,6 @@ def init_sampler(Y, is_directed=False,
     betas = np.zeros((n_iter, n_components), dtype=np.float64)
     betas[0] = rng.dirichlet(np.repeat(gamma / n_components, n_components))
 
-
     # initialize transition distributions by sampling from beta prior
     dir_alpha = alpha * betas[0]
     for t in range(1, n_time_steps):
@@ -332,7 +331,8 @@ class DynamicNetworkHDPLPCM(object):
     init_weight_ : array-like, shape (n_components,)
         The initial distribution over mixture components.
 
-    trans_weights_ : array-like, shape (n_time_steps-1, n_components, n_components)
+    trans_weights_ : array-like,
+                     shape (n_time_steps - 1, n_components, n_components)
         The transition probabilities between mixture components at
         each time-step.
 
@@ -366,7 +366,7 @@ class DynamicNetworkHDPLPCM(object):
     >>> Y.shape
     (3, 18, 18)
     >>> model = DynamicNetworkHDPLPCM(n_iter=250, burn=250, tune=250,
-                                      n_features=2, n_components=10).fit(Y)
+    ...                               n_features=2, n_components=10).fit(Y)
     >>> model.X_.shape
     (3, 18, 2)
 
@@ -549,7 +549,6 @@ class DynamicNetworkHDPLPCM(object):
                          n_resample_control=self.n_resample_control,
                          random_state=rng)
 
-
         if self.step_size_X == 'auto':
             self.step_size_X = 0.01 if self.is_directed else 0.1
 
@@ -580,7 +579,7 @@ class DynamicNetworkHDPLPCM(object):
             self.intercept_samplers = [
                 Metropolis(step_size=self.step_size_intercept,
                            tune=self.tune, proposal_type='random_walk') for
-                           _ in range(2)]
+                _ in range(2)]
         else:
             self.intercept_samplers = [
                 Metropolis(step_size=self.step_size_intercept, tune=self.tune,
@@ -603,7 +602,6 @@ class DynamicNetworkHDPLPCM(object):
         # E(tau_sq) = mean_variance_prior
         # sqrt(Var(tau_sq)) = mean_variance_prior_std * E(tau_sq)
         if self.mean_variance_prior == 'auto':
-            #self.mean_variance_prior_ = np.mean(self.Xs_[0, 0] ** 2)
             if self.is_directed:
                 self.mean_variance_prior_ = (
                     2 * (1. / n_nodes) ** (2. / self.n_features))
@@ -637,7 +635,6 @@ class DynamicNetworkHDPLPCM(object):
         if self.sigma_prior_std is not None:
             self.d0_ = (self.sigma_prior_std ** 2 / self.b_) * 2
             self.c0_ = self.b_ * self.d0_
-
 
         # record log-probability of each sample
         self.logps_ = np.zeros(self.n_iter, dtype=np.float64)
@@ -706,13 +703,13 @@ class DynamicNetworkHDPLPCM(object):
 
             # sample intercepts
             intercept = sample_intercepts(
-                        self.Y_fit_, X, intercept,
-                        intercept_prior=self.intercept_prior,
-                        intercept_variance_prior=self.intercept_variance_prior,
-                        samplers=self.intercept_samplers, radii=radii,
-                        dist=dist, is_directed=self.is_directed,
-                        case_control_sampler=self.case_control_sampler_,
-                        squared=False, random_state=rng)
+                self.Y_fit_, X, intercept,
+                intercept_prior=self.intercept_prior,
+                intercept_variance_prior=self.intercept_variance_prior,
+                samplers=self.intercept_samplers, radii=radii,
+                dist=dist, is_directed=self.is_directed,
+                case_control_sampler=self.case_control_sampler_,
+                squared=False, random_state=rng)
 
             # sample radii for directed networks
             if self.is_directed:
@@ -761,7 +758,7 @@ class DynamicNetworkHDPLPCM(object):
                             pk += (lmbda ** 2 / sigma[k]) * nk[t, k]
                             mk += (lmbda / sigma[k]) * np.sum(
                                 X[t, cluster_mask] -
-                                    (1 - lmbda) * X[t-1, cluster_mask], axis=0)
+                                (1 - lmbda) * X[t-1, cluster_mask], axis=0)
 
                 pk = 1 / pk
                 mk *= pk
@@ -770,7 +767,7 @@ class DynamicNetworkHDPLPCM(object):
 
             # sample cluster variances
             for k in range(self.n_components):
-                ak =  0.5 * (np.sum(nk[:, k]) * self.n_features + self.a)
+                ak = 0.5 * (np.sum(nk[:, k]) * self.n_features + self.a)
                 bk = 0.5 * self.b_
                 for t in range(n_time_steps):
                     if nk[t, k] > 0:
@@ -781,7 +778,7 @@ class DynamicNetworkHDPLPCM(object):
                         else:
                             bk += 0.5 * np.sum((
                                 X[t, cluster_mask] -
-                                (1 - lmbda) * X[t-1, cluster_mask]  -
+                                (1 - lmbda) * X[t-1, cluster_mask] -
                                 lmbda * mu[k]) ** 2)
                 sigma[k] = 1. / rng.gamma(shape=ak, scale=1. / bk)
 
@@ -845,7 +842,7 @@ class DynamicNetworkHDPLPCM(object):
                                 random_state=rng)
 
             # sample alpha + kappa
-            ak_shape, ak_scale= 5, .1
+            ak_shape, ak_scale = 5, .1
             alpha_kappa = self.alpha + self.kappa
 
             n_dot = np.sum(n[1:], axis=2)
@@ -856,8 +853,8 @@ class DynamicNetworkHDPLPCM(object):
             r = rng.beta(alpha_kappa + 1, valid_n_dot)
 
             shape = (ak_shape +
-                        np.sum(m[1:], axis=2)[valid_indices].sum() -
-                        np.sum(s))
+                     np.sum(m[1:], axis=2)[valid_indices].sum() -
+                     np.sum(s))
             scale = ak_scale - np.sum(np.log(r))
             alpha_kappa = rng.gamma(shape=shape, scale=1. / scale)
 
@@ -1039,7 +1036,6 @@ class DynamicNetworkHDPLPCM(object):
         # initial distribution (w0) log-likelihood
         loglik += dirichlet_logpdf(weights[0, 0], self.alpha_init * beta)
 
-
         # transition probabilities (w) log-likelihood
         deltas = self.kappa * np.eye(self.n_components)
         for t in range(1, n_time_steps):
@@ -1080,7 +1076,8 @@ class DynamicNetworkHDPLPCM(object):
         # intercept prior
         if self.is_directed:
             diff = intercept - self.intercept_prior
-            loglik -= np.sum(0.5 * (diff * diff) / self.intercept_variance_prior)
+            loglik -= np.sum(0.5 * (diff * diff) /
+                             self.intercept_variance_prior)
         else:
             diff = intercept - self.intercept_prior
             loglik -= 0.5 * (diff * diff) / self.intercept_variance_prior
@@ -1096,11 +1093,11 @@ class DynamicNetworkHDPLPCM(object):
 
         # cluster means log-likelihood
         for k in range(self.n_components):
-            loglik -=  0.5 * np.sum(mu[k] ** 2) / self.mean_variance_prior_
+            loglik -= 0.5 * np.sum(mu[k] ** 2) / self.mean_variance_prior_
 
         # cluster sigmas log-likelihood
         loglik += np.sum(-(0.5 * self.a + 1) * np.log(sigma[z]) -
-                            (0.5 * self.b_ / sigma[z]))
+                         (0.5 * self.b_ / sigma[z]))
 
         # lambda log-likelihood
         loglik += truncated_normal_logpdf(lmbda,
@@ -1113,8 +1110,9 @@ class DynamicNetworkHDPLPCM(object):
 
         # hyperprior loglik
         if self.mean_variance_prior_std is not None:
-            loglik += (-(0.5 * self.a0_ + 1) * np.log(self.mean_variance_prior_) -
-                            (0.5 * self.b0_ / self.mean_variance_prior_))
+            loglik += (-(0.5 * self.a0_ + 1) *
+                       np.log(self.mean_variance_prior_) -
+                       (0.5 * self.b0_ / self.mean_variance_prior_))
         if self.sigma_prior_std is not None:
             loglik += (self.c0_ - 1) * np.log(self.b_) - self.d0_ * self.b_
 

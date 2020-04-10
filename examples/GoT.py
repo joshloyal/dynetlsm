@@ -1,3 +1,9 @@
+"""
+Runs the analysis of the GoT character interactions network found in the
+paper 'A Bayesian nonparametric latent space approach to modeling evolving
+communities in dynamic networks' by Joshua Loyal and Yuguo Chen
+"""
+
 from dynetlsm import DynamicNetworkHDPLPCM
 from dynetlsm.datasets import load_got
 from dynetlsm.plots import (
@@ -6,10 +12,6 @@ from dynetlsm.plots import (
     plot_latent_space
 )
 
-
-# Runs the analysis of the GoT character interactions network found in the
-# paper "A Bayesian nonparametric latent space approach to modeling evolving
-# "communities in dynamic networks" by Joshua Loyal and Yuguo Chen
 
 # Load GoT character interaction networks
 Y, names = load_got(seasons=[1,2,3,4], weight_min=10)

@@ -1,3 +1,9 @@
+"""
+Runs the analysis of the military alliances network found in the
+paper 'A Bayesian nonparametric latent space approach to modeling evolving
+communities in dynamic networks' by Joshua Loyal and Yuguo Chen
+"""
+
 from dynetlsm import DynamicNetworkHDPLPCM
 from dynetlsm.datasets import load_alliances
 from dynetlsm.plots import (
@@ -6,10 +12,6 @@ from dynetlsm.plots import (
     plot_latent_space
 )
 
-
-# Runs the analysis of the military alliances network found in the
-# paper "A Bayesian nonparametric latent space approach to modeling evolving
-# "communities in dynamic networks" by Joshua Loyal and Yuguo Chen
 
 # Load military alliances networks
 Y, names = load_alliances()

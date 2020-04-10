@@ -17,6 +17,7 @@ from ..latent_space import calculate_distances
 
 __all__ = ['network_from_dynamic_latent_space',
            'simple_splitting_dynamic_network',
+           'synthetic_static_community_dynamic_network',
            'synthetic_dynamic_network']
 
 
@@ -203,6 +204,83 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
         X, intercept=intercept, radii=radii, random_state=rng)
 
     return Y, z
+
+
+def synthetic_static_community_dynamic_network(
+        n_nodes=100, n_time_steps=5, n_groups=6,
+        intercept=1.0, lmbda=0.8, sticky_const=20.,
+        sigma_shape=6, sigma_scale=20,
+        random_state=42):
+    rng = check_random_state(random_state)
+
+    # group locations
+    mus = np.array([[-3, 0],
+                    [3, 0],
+                    [-1.5, 0],
+                    [1.5, 0],
+                    [0, 2.0],
+                    [0, -2.0]])
+
+    if n_groups > 6:
+        raise ValueError("Only a maximum of six groups allowed for now.")
+
+    # group spread
+    sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
+                                    size=n_groups))
+
+    # sample initial distribution
+    w0 = rng.dirichlet(np.repeat(10, n_groups))  # E[p] = 1 / n_groups
+
+    # set-up transition distribution
+    with np.errstate(divide='ignore'):
+        wt = 1. / pairwise_distances(mus)
+
+    # only took necessary groups
+    wt = wt[:n_groups][:, :n_groups]
+    diag_indices = np.diag_indices_from(wt)
+    wt[diag_indices] = 0
+    wt[diag_indices] = sticky_const * np.max(wt, axis=1)
+    wt /= wt.sum(axis=1).reshape(-1, 1)
+
+    # run data generating process
+    X, z = [], []
+
+    # t = 0
+    z0 = rng.choice(np.arange(n_groups), p=w0, size=n_nodes)
+    X0 = np.zeros((n_nodes, 2), dtype=np.float64)
+    for group_id in range(n_groups):
+        group_count = np.sum(z0 == group_id)
+        X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_count, 2) +
+                                    mus[group_id])
+    X.append(X0)
+    z.append(z0)
+
+    for t in range(1, n_time_steps):
+        zt = np.zeros(n_nodes, dtype=np.int)
+        for group_id in range(n_groups):
+            group_mask = z[t - 1] == group_id
+            zt[group_mask] = rng.choice(np.arange(n_groups), p=wt[group_id, :],
+                                        size=np.sum(group_mask))
+
+        Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+        for group_id in range(n_groups):
+            group_mask = zt == group_id
+            group_count = np.sum(group_mask)
+            Xt[group_mask, :] = (
+                sigmas[group_id] * rng.randn(group_count, 2) + (
+                    lmbda * mus[group_id] + (1 - lmbda) * X[t-1][group_mask, :])
+            )
+
+        X.append(Xt)
+        z.append(zt)
+
+    X = np.stack(X, axis=0)
+    z = np.vstack(z)
+
+    Y, _ = network_from_dynamic_latent_space(X, intercept=intercept,
+                                             random_state=rng)
+
+    return Y, X, z, intercept
 
 
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,

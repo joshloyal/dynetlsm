@@ -84,7 +84,7 @@ def get_sources():
         for name in os.listdir(src_path):
             path = os.path.join(src_path, name)
             if os.path.isfile(path) and path.endswith(".c"):
-                files.append(path)
+                files.append(os.path.relpath(path))
 
     return files
 
@@ -119,7 +119,7 @@ def make_extension(ext_name, macros=[]):
         include_dirs = [get_include] + include_dirs
     return Extension(
         mod_name,
-        sources=[ext_path] + get_sources(),
+        sources=[os.path.relpath(ext_path)] + get_sources(),
         include_dirs=include_dirs,
         extra_compile_args=["-O3", "-Wall", "-fPIC"],
         define_macros=macros)

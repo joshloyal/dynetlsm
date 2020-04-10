@@ -1,3 +1,9 @@
+"""
+Runs the analysis of the Sampson's monastery network found in the
+paper 'A Bayesian nonparametric latent space approach to modeling evolving
+communities in dynamic networks' by Joshua Loyal and Yuguo Chen
+"""
+
 from dynetlsm import DynamicNetworkHDPLPCM
 from dynetlsm.datasets import load_monks
 from dynetlsm.plots import (
@@ -7,10 +13,6 @@ from dynetlsm.plots import (
     plot_latent_space
 )
 
-
-# Runs the analysis of the Sampson's monastery network found in the
-# paper "A Bayesian nonparametric latent space approach to modeling evolving
-# "communities in dynamic networks" by Joshua Loyal and Yuguo Chen
 
 # Load Sampson's monastery network
 Y, labels, names = load_monks(dynamic=True, is_directed=False)

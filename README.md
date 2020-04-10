@@ -250,6 +250,17 @@ alluvial_plot(lpcm.z_)
 
 From this diagram, one can see that group 1 primarily splits off into group 3, while group 2 primarily splits off into group 4.
 
+Simulation Studies and Real-Data Applications
+---------------------------------------------
+This package includes the simulation studies and real-data applications found in Loyal and Chen (2020):
+
+* A synthetic dynamic network with a time-homogeneous community structure: ([here](/examples/homogeneous_simulation.py)).
+* A synthetic dynamic network with a time-inhomogeneous community structure: ([here](/examples/inhomogeneous_simulation.py)).
+* Sampson's monastery network: ([here](/examples/sampson_monks.py)).
+* Dynamic network constructed from international military alliances during the first three decades of the Cold War (1950 - 1979): ([here](/examples/military_alliances.py)).
+* Character interactions in the first four seasons of the Game of Thrones television series: ([here](GoT.py)).
+
+We also provide a few example [jupyter notebooks](/notebooks) that demonstrate the use of the package.
 
 References:
 -----------

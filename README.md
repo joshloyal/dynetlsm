@@ -207,7 +207,7 @@ for t, ax in enumerate(axes.flat):
 <p align="center">
 <img src="/images/hdp_lpcm_latent_space.png" alt="Latent Space of the HDP-LPCM" width="500">
 </p>
-The embedding inferred by the HDP-LPCM makes the community structure of the network apparent. The HDP-LPCM correctly infers that the two communities split off into four communities at the second time point. To better visualize this behavior, one can display an alluvial diagram of the label assignments over time:
+The HDP-LPCM infers an embedding that makes the community structure of the network apparent. Furthermore, the HDP-LPCM correctly infers that the two communities split off into four communities at the second time point. To better visualize this behavior, one can display an alluvial diagram of the label assignments over time:
 
 ```python
 from dynetlsm.plots import alluvial_plot

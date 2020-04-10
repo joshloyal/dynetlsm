@@ -201,7 +201,7 @@ plot_traces(lpcm)
 
 We can then visualize the latent space embeddings as well as the components of the inferred Gaussian mixture:
 ```python
-from matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from dynetlsm.plots import plot_latent_space
 

@@ -1,6 +1,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/joshloyal/dynetlsm/blob/master/LICENSE)
 [![Travis](https://travis-ci.com/joshloyal/dynetlsm.svg?token=gTKqq3zSsip89mhYVQPZ&branch=master)](https://travis-ci.com/joshloyal/dynetlsm)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/joshloyal/dynetlsm)](https://ci.appveyor.com/project/joshloyal/dynetlsm/history)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/dynetlsm)](https://pypi.org/project/dynetlsm/)
 
 # DynetLSM: latent space models for dynamic networks
 

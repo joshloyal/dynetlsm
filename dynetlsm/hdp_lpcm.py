@@ -6,7 +6,6 @@ from math import ceil
 
 from scipy.optimize import minimize
 from scipy.special import expit
-from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_array
 from tqdm import tqdm
 
@@ -141,7 +140,7 @@ def init_sampler(Y, is_directed=False,
     return Xs, intercepts, mus, sigmas, zs, betas, weights, lambdas, radiis, Y
 
 
-class DynamicNetworkHDPLPCM(BaseEstimator):
+class DynamicNetworkHDPLPCM(object):
     """The HDP Latent Position Clustering Model (HDP-LPCM) [1].
 
     The hierarchal Dirichlet process latent position clustering model
@@ -366,7 +365,8 @@ class DynamicNetworkHDPLPCM(BaseEstimator):
     >>> Y, _, _ = load_monks(is_directed=False)
     >>> Y.shape
     (3, 18, 18)
-    >>> model = DynamicNetworkHDPLPCM(n_features=2, is_directed=False).fit(Y)
+    >>> model = DynamicNetworkHDPLPCM(n_iter=250, burn=250, tune=250,
+                                      n_features=2, n_components=10).fit(Y)
     >>> model.X_.shape
     (3, 18, 2)
 

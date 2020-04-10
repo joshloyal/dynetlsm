@@ -3,7 +3,6 @@ import scipy.stats as stats
 
 from scipy.optimize import minimize
 from scipy.special import expit
-from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_array
 from tqdm import tqdm
 
@@ -99,7 +98,7 @@ def directed_intercept_mle(Y, X, radii, intercept_init=None, squared=False,
     return result.x[0], result.x[1]
 
 
-class DynamicNetworkLSM(BaseEstimator):
+class DynamicNetworkLSM(object):
     """A latent space model for dynamic networks [1].
 
     Originally proposed by Hoff et. al. [2], latent space models (LSM) embed a
@@ -222,7 +221,7 @@ class DynamicNetworkLSM(BaseEstimator):
     >>> Y, _, _ = load_monks(is_directed=False)
     >>> Y.shape
     (3, 18, 18)
-    >>> model = DynamicNetworkLSM().fit(Y)
+    >>> model = DynamicNetworkLSM(n_iter=250, burn=250, tune=250).fit(Y)
 
     References
     ----------

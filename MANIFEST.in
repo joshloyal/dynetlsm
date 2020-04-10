@@ -1,7 +1,6 @@
-include *.rst
-recursive-include doc *
+include *.md
 recursive-include examples *
-recursive-include dynetlsm/datasets *.csv
-include README.rst
+recursive-include dynetlsm/datasets *.csv *.npy *.txt
+include README.md
 include requirements.txt
 include test_requirements.txt

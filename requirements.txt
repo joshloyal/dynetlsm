@@ -9,7 +9,6 @@ plac
 joblib
 matplotlib
 seaborn
-cython
 arviz
 pyvis
 statsmodels

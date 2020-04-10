@@ -174,7 +174,7 @@ for t, ax in enumerate(axes.flat):
 <img src="/images/lsm_latent_space.png" alt="Latent Space of the LSM model" width="400">
 </p>
 
-Although the nodes are embedded in a way that nodes sharing many connections are close together, the true community structure of the network is not apparent. This is easily remedied by applying the HDP-LPCM. As before, we initialize the model and call `fit`:
+Although this embedding places nodes that share many connections close together, the true community structure of the network is not apparent. This is easily remedied by applying the HDP-LPCM. As before, we initialize the model and call `fit`:
 ```python
 
 from dynetlsm import DynamicNetworkHDPLPCM

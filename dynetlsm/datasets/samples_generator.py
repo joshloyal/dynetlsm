@@ -251,7 +251,7 @@ def synthetic_static_community_dynamic_network(
     for group_id in range(n_groups):
         group_count = np.sum(z0 == group_id)
         X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_count, 2) +
-                                    mus[group_id])
+                                 mus[group_id])
     X.append(X0)
     z.append(z0)
 

@@ -29,7 +29,7 @@ and the requirements highlighted in [requirements.txt](requirements.txt).
 
 Installation
 ------------
-You need a working installation of numpy and scipy to install dynetlsm. If you have a working installation of numpy and scipy, the easiest way to install dynetlsm is using ``pip``:
+You need a working installation of numpy and scipy to install DynetLSM. If you have a working installation of numpy and scipy, the easiest way to install dynetlsm is using ``pip``:
 
 ```
 pip install -U dynetlsm
@@ -43,7 +43,7 @@ cd dynetlsm
 pip install .
 ```
 
-Or install using pip and GitHub::
+Or install using pip and GitHub:
 
 ```
 pip install -U git+https://github.com/joshloyal/dynetlsm.git

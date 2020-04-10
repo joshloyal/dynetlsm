@@ -4,6 +4,8 @@
 
 # DynetLSM: latent space models for dynamic networks
 
+*Author: [Joshua D. Loyal](https://joshloyal.github.io/)*
+
 This package provides an interface for learning and inference in latent
 space models for dynamic networks. Inference is performed using
 blocked Metropolis-Hastings within Gibbs sampling.

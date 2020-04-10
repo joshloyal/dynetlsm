@@ -170,6 +170,7 @@ def setup_package():
             version=VERSION,
             download_url=DOWNLOAD_URL,
             long_description=LONG_DESCRIPTION,
+            long_description_content_type='text/markdown',
             zip_safe=False,
             classifiers=CLASSIFIERS,
             package_data={

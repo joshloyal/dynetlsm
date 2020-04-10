@@ -81,19 +81,19 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 1. For `t = 1`, sample a node's initial latent position from a Gaussian distribution:
 
 <p align="center">
-<img src="/images/dynamic_lsm_initial.png" alt="latent positions prior" width="200">
+<img src="/images/dynamic_lsm_initial.png" alt="lsm initial position prior" width="200">
 </p>
 
 2. For `t = 2, ..., T`, a node's latent position follows a Gaussian random walk:
 
 <p align="center">
-<img src="/images/dynamic_lsm_rw.png" alt="latent positions prior" width="200">
+<img src="/images/dynamic_lsm_rw.png" alt="lsm dynamic random walk" width="200">
 
 
 3. For each edge, sample a connection from a Bernoulli distribution:
 
 <p align="center">
-<img src="/images/dynamic_lsm.png" alt="static lsm" width="400">
+<img src="/images/dynamic_lsm.png" alt="dynamic lsm" width="400">
 </p>
 
 
@@ -104,7 +104,7 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007)<sup>[[4]](#References)</sup> with their latent position clustering model (LPCM). Intuitively, the LPCM posits that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
 
 <p align="center">
-<img src="/images/lpcm.png" alt="latent positions prior" width="225">
+<img src="/images/lpcm.png" alt="latent position clustering model" width="225">
 </p>
 
 The LPCM relates the latent positions to the probability of forming an edge in the same way as the original LSM. In practice, one interprets nodes that share the same mixture component as belonging to the same community.
@@ -117,31 +117,31 @@ To solve the problem of inferring evolving community structures in dynamic netwo
 1. Draw the time-varying transition probabilities from a sticky-HDP:
 
 <p align="center">
-<img src="/images/hdp.png" alt="latent positions prior" width="500">
+<img src="/images/hdp.png" alt="sticky-hdp prior" width="500">
 </p>
 
 2. For `t = 1, ..., T`, propagate a node's latent community label through time according to an HMM:
 
 <p align="center">
-<img src="/images/dynamic_label.png" alt="latent positions prior" width="150">
+<img src="/images/dynamic_label.png" alt="latent label hmm" width="150">
 </p>
 
 3. For `t = 1`, sample a node's initial latent position from its assigned Gaussian mixture component:
 
 <p align="center">
-<img src="/images/dynamic_lpcm_initial.png" alt="latent positions prior" width="225">
+<img src="/images/dynamic_lpcm_initial.png" alt="hdp-lpcm initial positions" width="225">
 </p>
 
 4. For `t = 2, ..., T`, sample a node's latent position as a mixture between its previous position and its assigned Gaussian mixture component:
 
 <p align="center">
-<img src="/images/dynamic_lpcm_rw.png" alt="latent positions prior" width="400">
+<img src="/images/dynamic_lpcm_rw.png" alt="hdp-lpcm mixture random walk" width="400">
 </p>
 
 5. For each edge, sample a connection from a Bernoulli distribution
 :
 <p align="center">
-<img src="/images/dynamic_lsm.png" alt="static lsm" width="400">
+<img src="/images/dynamic_lsm.png" alt="hdp-lpcm" width="400">
 </p>
 
 

@@ -12,7 +12,7 @@ dynamic networks" (Link: [arXiv:2003.07404](https://arxiv.org/abs/2003.07404)).
 BibTeX reference to cite, if you use this package:
 ```bibtex
 @article{loyal2020hdplpcm,
-    title = {A bayesian nonparametric latent space approach to modeling evolving communities in dynamic networks},
+    title = {A Bayesian nonparametric latent space approach to modeling evolving communities in dynamic networks},
     author = {Loyal, Joshua Daniel and Chen, Yuguo},
     journal = {arXiv preprint arXiv:2003.07404},
     year = {2020},

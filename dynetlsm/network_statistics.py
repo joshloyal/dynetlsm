@@ -3,7 +3,7 @@ import numpy as np
 from scipy.sparse import csgraph
 from sklearn.preprocessing import LabelEncoder
 
-from latent_graph.array_utils import nondiag_indices_from
+from .array_utils import nondiag_indices_from
 
 
 def is_dynamic(Y):

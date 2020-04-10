@@ -145,7 +145,8 @@ To fit a dynamic LSM with a 2-dimensional latent space, we initialize the sample
 ```python
 from dynetlsm import DynamicNetworkLSM
 
-lsm = DynamicNetworkLSM(n_features=2, random_state=42)
+lsm = DynamicNetworkLSM(n_iter=5000, burn=2500, tune=2500,
+                        n_features=2, random_state=42)
 lsm.fit(Y)
 ```
 
@@ -162,7 +163,10 @@ plot_traces(lsm)
 
 We can then visualize the latent space embeddings:
 ```python
+import matplotlib.pyplot as plt
+
 from dynetlsm.plots import plot_latent_space
+
 
 axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 6))
 for t, ax in enumerate(axes.flat):
@@ -179,7 +183,8 @@ Although the LSM's embedding places nodes that share many connections close toge
 
 from dynetlsm import DynamicNetworkHDPLPCM
 
-lpcm = DynamicNetworkHDPLPCM(n_features=2, n_components=10, random_state=42)
+lpcm = DynamicNetworkHDPLPCM(n_iter=5000, burn=2500, tune=2500,
+                             n_features=2, n_components=10, random_state=42)
 lpcm.fit(Y)
 ```
 
@@ -196,6 +201,8 @@ plot_traces(lpcm)
 
 We can then visualize the latent space embeddings as well as the components of the inferred Gaussian mixture:
 ```python
+from matplotlib.pyplot as plt
+
 from dynetlsm.plots import plot_latent_space
 
 

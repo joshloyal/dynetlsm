@@ -140,9 +140,9 @@ def init_sampler(Y, is_directed=False,
 
 
 class DynamicNetworkHDPLPCM(object):
-    """The HDP Latent Position Clustering Model (HDP-LPCM) [1].
+    """The HDP Latent Position Cluster Model (HDP-LPCM) [1].
 
-    The hierarchal Dirichlet process latent position clustering model
+    The hierarchal Dirichlet process latent position cluster model
     (HDP-LPCM) is a Bayesian nonparametric model for inferring community
     structure in dynamic (time-varying) networks.
 

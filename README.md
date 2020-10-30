@@ -12,7 +12,7 @@ space models for dynamic networks. Inference is performed using
 blocked Metropolis-Hastings within Gibbs sampling.
 
 The primary method implemented in this package is the hierarchical Dirichlet
-process latent position clustering model (HDP-LPCM) described in
+process latent position cluster model (HDP-LPCM) described in
 "A Bayesian nonparametric latent space approach to modeling evolving communities in
 dynamic networks" [[arXiv:2003.07404](https://arxiv.org/abs/2003.07404)].
 
@@ -99,14 +99,14 @@ For dynamic (time-varying) networks, one is also interested in determining how p
 </p>
 
 
-### Latent Position Clustering Models
+### Latent Position Cluster Models
 
 
 #### Static Networks
-Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007)<sup>[[4]](#References)</sup> with their latent position clustering model (LPCM). Intuitively, the LPCM posits that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
+Determining the high-level community structure of a network is another important task in network analysis. Community structure was incorporated into LSMs by Handcock et al. (2007)<sup>[[4]](#References)</sup> with their latent position cluster model (LPCM). Intuitively, the LPCM posits that communities are the result of clustering within the latent space. This clustering is incorporated in the LSM framework by assuming the latent positions are drawn from a Gaussian mixture model, i.e,
 
 <p align="center">
-<img src="/images/lpcm.png" alt="latent position clustering model" width="225">
+<img src="/images/lpcm.png" alt="latent position cluster model" width="225">
 </p>
 
 The LPCM relates the latent positions to the probability of forming an edge in the same way as the original LSM. In practice, one interprets nodes that share the same mixture component as belonging to the same community.
@@ -114,7 +114,7 @@ The LPCM relates the latent positions to the probability of forming an edge in t
 #### Dynamic Networks
 Inferring a network's community structure is especially difficult for dynamic networks because the number of communities may change over time. If one assumes that the number of communities is fixed, then the model of Sewell and Chen (2017)<sup>[[5]](#References)</sup> is able to infer a dynamic network's community structure by propagating each node's mixture assignment through time with a autoregressive hidden Markov model (AR-HMM). However, the assumption of a static number of communities is at odds with many real-world dynamic networks. It is often the case that the number of communities evolves over time.
 
-To solve the problem of inferring evolving community structures in dynamic networks, Loyal and Chen (2020)<sup>[[6]](#References)</sup> proposed using a sticky hierarchical Dirichlet process hidden Markov model (HDP-HMM) with time-inhomogeneous transition probabilities in conjunction with the LPCM . For this reason, the model is called the hierarchical Dirichlet process latent position clustering model (HDP-LPCM). Under the HDP-LPCM, a node's latent community label propagate through time according to iid HDP-HMMs. Unlike previous models, this allows the HDP-LPCM to create and delete communities over-time as well as infer the number of the communities from the data. The generative model is as follows:
+To solve the problem of inferring evolving community structures in dynamic networks, Loyal and Chen (2020)<sup>[[6]](#References)</sup> proposed using a sticky hierarchical Dirichlet process hidden Markov model (HDP-HMM) with time-inhomogeneous transition probabilities in conjunction with the LPCM . For this reason, the model is called the hierarchical Dirichlet process latent position cluster model (HDP-LPCM). Under the HDP-LPCM, a node's latent community label propagate through time according to iid HDP-HMMs. Unlike previous models, this allows the HDP-LPCM to create and delete communities over-time as well as infer the number of the communities from the data. The generative model is as follows:
 
 1. Draw the time-varying transition probabilities from a sticky-HDP:
 

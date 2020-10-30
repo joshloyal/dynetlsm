@@ -393,8 +393,12 @@ def plot_traces_hdp_lpcm(model, figsize=(10, 12), maxlags=100, fontsize=8):
 
 def plot_posterior_counts(model, t=0, bar_width=0.25, normalize=True,
                           fontsize=16, ticksize=14, figsize=(10, 6),
-                          include_title=True):
-    fig, ax = plt.subplots(figsize=figsize)
+                          include_title=True, ax=None):
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = None
 
     freq = model.posterior_group_counts_[t]
     index = model.posterior_group_ids_[t]

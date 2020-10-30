@@ -11,7 +11,7 @@ python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
 
 if [[ "$COVERAGE" == "true" ]]; then
-    pytest --cov=$MODULE --pep8 --pyargs
+    pytest --cov=$MODULE --pyargs
 else
-    pytest --pep8 --pyargs
+    pytest --pyargs
 fi

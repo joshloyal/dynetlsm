@@ -3,13 +3,17 @@ import networkx as nx
 
 
 def repel_labels(X, node_names, datasize, k=1.0, textsize=10, mask=None,
-                 ax=None):
+                 include_number=True, ax=None):
     G = nx.DiGraph()
 
     data_nodes = []
     init_pos = {}
     data_fmt = 'data_{}'
-    label_fmt = '{} ({})'
+
+    if include_number:
+        label_fmt = '{} ({})'
+    else:
+        label_fmt = '{}'
     for i, (x, y) in enumerate(X):
         if mask[i]:
             data_str = data_fmt.format(i)

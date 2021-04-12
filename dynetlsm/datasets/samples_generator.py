@@ -17,6 +17,8 @@ from ..latent_space import calculate_distances
 
 __all__ = ['network_from_dynamic_latent_space',
            'simple_splitting_dynamic_network',
+           'simple_merging_dynamic_network',
+           'merging_dynamic_network',
            'synthetic_static_community_dynamic_network',
            'synthetic_dynamic_network']
 
@@ -206,20 +208,181 @@ def simple_splitting_dynamic_network(n_nodes=120, n_time_steps=9,
     return Y, z
 
 
-def synthetic_static_community_dynamic_network(
-        n_nodes=100, n_time_steps=5, n_groups=6,
-        intercept=1.0, lmbda=0.8, sticky_const=20.,
-        sigma_shape=6, sigma_scale=20,
-        random_state=42):
+def simple_merging_dynamic_network(n_nodes=120, n_time_steps=9,
+                                   intercept=1.0, lmbda=0.8, sticky_const=20.,
+                                   sigma_shape=6, sigma_scale=20,
+                                   random_state=42):
+    rng = check_random_state(random_state)
+
+    # group locations
+    mus = np.array([[-2, 0],
+                    [2, 0],
+                    [0, 0]])
+
+    # group spread
+    sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
+                                    size=3))
+    sigmas = [0.1, 0.1, 0.3]
+
+    # sample initial distribution
+    w0 = np.array([0.5, 0.5])  # E[p] = 1 / n_groups
+
+    # run data generating process
+    X, z = [], []
+
+    # t = 0
+    z0 = rng.choice(np.arange(2), p=w0, size=n_nodes)
+    X0 = np.zeros((n_nodes, 2), dtype=np.float64)
+    for group_id in range(2):
+        group_count = np.sum(z0 == group_id)
+        X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_count, 2) +
+                                 mus[group_id])
+    X.append(X0)
+    z.append(z0)
+
+    for t in range(1, n_time_steps):
+        zt = 2 * np.ones(n_nodes, dtype=np.int)
+        Xt = sigmas[2] * rng.randn(n_nodes, 2) + (lmbda * mus[2] + (1 - lmbda) * X[t-1])
+
+        X.append(Xt)
+        z.append(zt)
+
+    X = np.stack(X, axis=0)
+    z = np.vstack(z)
+
+    Y, _ = network_from_dynamic_latent_space(X, intercept=intercept,
+                                             random_state=rng)
+
+    return Y, X, z, intercept
+
+
+def merging_dynamic_network(n_nodes=120, n_time_steps=9,
+                            intercept=1.0, lmbda=0.8, sticky_const=20.,
+                            sigma_shape=6, sigma_scale=20,
+                            random_state=42):
     rng = check_random_state(random_state)
 
     # group locations
     mus = np.array([[-3, 0],
-                    [3, 0],
-                    [-1.5, 0],
-                    [1.5, 0],
-                    [0, 2.0],
-                    [0, -2.0]])
+                    [3., 0],
+                    [0, 0]])
+
+    # group spread
+    sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
+                                    size=3))
+    sigmas = [1.0, 1.0, 0.8]
+
+    # sample initial distribution
+    w0 = np.array([0.5, 0.5])  # E[p] = 1 / n_groups
+
+    # run data generating process
+    X, z = [], []
+
+    # t = 0
+    z0 = rng.choice(np.arange(2), p=w0, size=n_nodes)
+    X0 = np.zeros((n_nodes, 2), dtype=np.float64)
+    for group_id in range(2):
+        group_count = np.sum(z0 == group_id)
+        X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_count, 2) +
+                                 mus[group_id])
+    X.append(X0)
+    z.append(z0)
+
+    for t in range(1, n_time_steps):
+        if t > 2:
+            zt = 2 * np.ones(n_nodes, dtype=np.int)
+        else:
+            #wt = np.array([[1 - t/4., 1/(6 * t), t/4. - 1/(6 * t)],
+            #               [1/(6 * t), 1 - t/4., t/4. - 1/(6 * t)],
+            #               [0, 0, 1.]])
+            wt = np.array([[1 - t/4.,  0., t/4.],
+                           [0, 1 - t/4., t/4.],
+                           [0, 0, 1.]])
+            zt = np.zeros(n_nodes, dtype=np.int)
+            print(wt[0])
+            for group_id in range(3):
+                group_mask = z[t-1] == group_id
+                group_size = np.sum(group_mask)
+                zt[group_mask] = rng.choice(np.arange(3), p=wt[group_id], size=group_size)
+
+        #Xt = sigmas[2] * rng.randn(n_nodes, 2) + (lmbda * mus[2] + (1 - lmbda) * X[t-1])
+        Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+        for group_id in range(3):
+            group_count = np.sum(zt == group_id)
+            Xt[zt == group_id, :] = (sigmas[group_id] * rng.randn(group_count, 2) +
+                                     (lmbda * mus[group_id] + (1 - lmbda) * X[t-1][zt == group_id, :]))
+
+        X.append(Xt)
+        z.append(zt)
+
+    X = np.stack(X, axis=0)
+    z = np.vstack(z)
+
+    Y, probas = network_from_dynamic_latent_space(X, intercept=intercept,
+                                             random_state=rng)
+
+    return Y, X, z, intercept, probas
+
+
+
+def merging_block_model(n_nodes=100, n_time_steps=6, p_in=0.6,
+                        random_state=42):
+    rng = check_random_state(random_state)
+
+    Y = np.zeros((n_time_steps, n_nodes, n_nodes))
+
+    z = rng.choice([0, 1], size=n_nodes)
+    #z = [z0]
+    indices = np.tril_indices(n_nodes, k=-1)
+
+    Z = np.eye(2)[z]
+    ZZT = np.dot(Z, Z.T)
+    probas = p_in * ZZT + p_in/5. * (1 - ZZT)
+    y_vec = rng.binomial(1, probas[indices])
+    Y[0][indices] = y_vec
+    Y[0] += Y[0].T
+
+    for t in range(1, n_time_steps):
+        Z = np.eye(2)[z]
+        ZZT = np.dot(Z, Z.T)
+
+        if t < 4:
+            probas = p_in * ZZT + p_in * ((t + 1)/5.) * (1 - ZZT)
+        else:
+            probas = p_in * ZZT + p_in * (1 - ZZT)
+
+        y_vec = rng.binomial(1, probas[indices])
+        Y[t][indices] = y_vec
+        Y[t] += Y[t].T
+
+    return Y, z
+
+def synthetic_static_community_dynamic_network(
+        n_nodes=100, n_time_steps=5, n_groups=6,
+        intercept=0.25, lmbda=0.8, sticky_const=20.,
+        sigma_shape=6, sigma_scale=0.5,
+        random_state=42):
+    rng = check_random_state(random_state)
+
+    # group locations
+    #mus = np.array([[-3, 0],
+    #                [3, 0],
+    #                [-1.5, 0],
+    #                [1.5, 0],
+    #                [0, 2.0],
+    #                [0, -2.0]])
+    #mus = np.array([[-4, 0],
+    #                [4, 0],
+    #                [-1, 0],
+    #                [1, 0],
+    #                [0, 3.0],
+    #                [0, -3.0]])
+    mus = np.array([[-4, 0],
+                    [4, 0],
+                    [-2, 0],
+                    [2, 0],
+                    [0, 4.0],
+                    [0, -4.0]])
 
     if n_groups > 6:
         raise ValueError("Only a maximum of six groups allowed for now.")
@@ -277,10 +440,10 @@ def synthetic_static_community_dynamic_network(
     X = np.stack(X, axis=0)
     z = np.vstack(z)
 
-    Y, _ = network_from_dynamic_latent_space(X, intercept=intercept,
+    Y, probas = network_from_dynamic_latent_space(X, intercept=intercept,
                                              random_state=rng)
 
-    return Y, X, z, intercept
+    return Y, X, z, intercept, probas
 
 
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,

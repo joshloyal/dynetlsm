@@ -346,13 +346,16 @@ class DynamicNetworkLSM(object):
         # perform imputation and sample missing edges
         if self.is_directed:
             nondiag_indices = nondiag_indices_from_3d(Y)
-            nan_mask = np.isnan(Y[nondiag_indices])
+            #nan_mask = np.isnan(Y[nondiag_indices])
+            nan_mask = Y[nondiag_indices] == -1
         else:
             triu_indices = triu_indices_from_3d(Y, k=1)
-            nan_mask = np.isnan(Y[triu_indices])
+            #nan_mask = np.isnan(Y[triu_indices])
+            nan_mask = Y[triu_indices] == -1
         sample_missing = np.any(nan_mask)
         if sample_missing:
-            self.Y_fit_ = SimpleNetworkImputer().fit_transform(Y)
+            self.Y_fit_ = SimpleNetworkImputer(
+                strategy='random', missing_value=-1).fit_transform(Y)
         else:
             self.Y_fit_ = Y
 

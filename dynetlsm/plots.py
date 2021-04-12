@@ -23,6 +23,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import LabelEncoder
 
 from .lsm import DynamicNetworkLSM
+from .lpcm import DynamicNetworkLPCM
 from .hdp_lpcm import DynamicNetworkHDPLPCM
 from .array_utils import nondiag_indices_from
 from .trace_utils import effective_n
@@ -170,7 +171,7 @@ def plot_traces(model, figsize=(10, 12), maxlags=100, fontsize=8):
     if isinstance(model, DynamicNetworkLSM):
         return plot_traces_lsm(
             model, figsize=figsize, maxlags=maxlags, fontsize=fontsize)
-    elif isinstance(model, DynamicNetworkHDPLPCM):
+    elif isinstance(model, (DynamicNetworkHDPLPCM, DynamicNetworkLPCM)):
         return plot_traces_hdp_lpcm(
             model, figsize=figsize, maxlags=maxlags, fontsize=fontsize)
     else:

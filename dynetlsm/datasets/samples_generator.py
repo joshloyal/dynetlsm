@@ -7,6 +7,7 @@ import numpy as np
 
 from math import ceil
 
+from scipy.special import expit
 from sklearn.datasets import make_blobs
 from sklearn.metrics import pairwise_distances
 from sklearn.utils import check_random_state
@@ -21,6 +22,19 @@ __all__ = ['network_from_dynamic_latent_space',
            'merging_dynamic_network',
            'synthetic_static_community_dynamic_network',
            'synthetic_dynamic_network']
+
+
+def forecast_probas(X, z, wt, lmbda, mu, intercept):
+    """Simple plug-in estimate of one-step-ahead probabilities based on
+    the MAP estimate."""
+    ws = wt[z]
+
+    X_ahead = np.zeros((X.shape[0], X.shape[1]))
+    for g in np.unique(z):
+        X_ahead += ws[:, g].reshape(-1, 1) * (lmbda * mu[g] +
+            (1 - lmbda) * X)
+
+    return expit(intercept - calculate_distances(X_ahead))
 
 
 def network_from_dynamic_latent_space(X, intercept=1, coef=1,
@@ -361,28 +375,37 @@ def synthetic_static_community_dynamic_network(
         n_nodes=100, n_time_steps=5, n_groups=6,
         intercept=0.25, lmbda=0.8, sticky_const=20.,
         sigma_shape=6, sigma_scale=0.5,
-        random_state=42):
+        simulation_type=None, random_state=42):
     rng = check_random_state(random_state)
 
     # group locations
-    #mus = np.array([[-3, 0],
-    #                [3, 0],
-    #                [-1.5, 0],
-    #                [1.5, 0],
-    #                [0, 2.0],
-    #                [0, -2.0]])
-    #mus = np.array([[-4, 0],
-    #                [4, 0],
-    #                [-1, 0],
-    #                [1, 0],
-    #                [0, 3.0],
-    #                [0, -3.0]])
-    mus = np.array([[-4, 0],
-                    [4, 0],
-                    [-2, 0],
-                    [2, 0],
-                    [0, 4.0],
-                    [0, -4.0]])
+    if simulation_type == 'easy':
+        mus = np.array([[-3, 0],
+                        [3, 0],
+                        [-1.5, 0],
+                        [1.5, 0],
+                        [0, 2.0],
+                        [0, -2.0]])
+        sigma_shape = 6
+        sigma_scale = 20
+        intercept = 1.0
+    elif simulation_type == 'hard':
+        mus = np.array([[-4, 0],
+                        [4, 0],
+                        [-2, 0],
+                        [2, 0],
+                        [0, 4.0],
+                        [0, -4.0]])
+        sigma_shape = 6
+        sigma_scale = 0.5
+        intercept = 0.25
+    else:
+        mus = np.array([[-4, 0],
+                        [4, 0],
+                        [-2, 0],
+                        [2, 0],
+                        [0, 4.0],
+                        [0, -4.0]])
 
     if n_groups > 6:
         raise ValueError("Only a maximum of six groups allowed for now.")
@@ -443,7 +466,9 @@ def synthetic_static_community_dynamic_network(
     Y, probas = network_from_dynamic_latent_space(X, intercept=intercept,
                                              random_state=rng)
 
-    return Y, X, z, intercept, probas
+    proba_ahead = forecast_probas(X[-2], z[-2], wt, lmbda, mus, intercept)
+
+    return Y, X, z, intercept, probas, proba_ahead
 
 
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
@@ -474,6 +499,14 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [1.5, 0.],
                             [0, 2.0],
                             [0, -2.0]])
+        all_mus = np.array([[-2, 0],
+                            [2, 0],
+                            [-4, 0],
+                            [4, 0],
+                            [-2, 0],
+                            [2, 0],
+                            [0, 4.0],
+                            [0, -4.0]])
 
     n_groups_total = all_mus.shape[0]
 

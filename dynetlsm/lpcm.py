@@ -230,7 +230,7 @@ class DynamicNetworkLPCM(object):
         ws = self.trans_weight_[self.z_[-1]]
 
         X_ahead = np.zeros((self.Y_fit_.shape[1], self.n_features))
-        for g in np.unique(self.z_[-1]):
+        for g in range(self.n_components):
             X_ahead += ws[:, g].reshape(-1, 1) * (self.lambda_ * self.mu_[g] +
                 (1 - self.lambda_) * self.X_[-1])
 

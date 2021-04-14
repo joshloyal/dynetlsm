@@ -386,9 +386,16 @@ def synthetic_static_community_dynamic_network(
                         [1.5, 0],
                         [0, 2.0],
                         [0, -2.0]])
+        mus = np.array([[-4, 0],
+                        [4, 0],
+                        [-2, 0],
+                        [2, 0],
+                        [0, 4.0],
+                        [0, -4.0]])
         sigma_shape = 6
         sigma_scale = 20
-        intercept = 1.0
+        #intercept = 1.0
+        intercept = 0.25
     elif simulation_type == 'hard':
         mus = np.array([[-4, 0],
                         [4, 0],
@@ -474,6 +481,7 @@ def synthetic_static_community_dynamic_network(
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                               intercept=1.0, lmbda=0.8, sticky_const=20.,
                               sigma_shape=6, sigma_scale=20, is_directed=False,
+                              simulation_type='easy',
                               random_state=42):
     """Split from 2 -> 6 and then merge from 6 -> 4"""
     rng = check_random_state(random_state)
@@ -490,7 +498,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [1.0, 0.],
                             [0, 2.0],
                             [0, -2.0]]) / 100.
-    else:
+    elif simulation_type == 'easy':
         all_mus = np.array([[-1.5, 0.],
                             [1.5, 0.],
                             [-3, 0],
@@ -507,6 +515,21 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [2, 0],
                             [0, 4.0],
                             [0, -4.0]])
+        sigma_shape = 6
+        sigma_scale = 20
+        intercept = 0.25
+    else:
+        all_mus = np.array([[-2, 0],
+                            [2, 0],
+                            [-4, 0],
+                            [4, 0],
+                            [-2, 0],
+                            [2, 0],
+                            [0, 4.0],
+                            [0, -4.0]])
+        sigma_shape = 6
+        sigma_scale = 0.5
+        intercept = 0.25
 
     n_groups_total = all_mus.shape[0]
 

@@ -691,7 +691,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     wt[diag_indices] = sticky_const * np.max(wt, axis=1)
     wt = wt / wt.sum(axis=1).reshape(-1, 1)
 
-    for t in range(2 * time_chunks + 1, n_time_steps):
+    for t in range(2 * time_chunks + 1, n_time_steps + 1):
         zt = np.zeros(n_nodes, dtype=np.int)
         for idx, group_id in enumerate(new_groups):
             group_mask = z[t-1] == group_id

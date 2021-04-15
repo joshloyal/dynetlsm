@@ -507,17 +507,17 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [1.5, 0.],
                             [0, 2.0],
                             [0, -2.0]])
-        all_mus = np.array([[-2, 0],
-                            [2, 0],
-                            [-4, 0],
-                            [4, 0],
-                            [-2, 0],
-                            [2, 0],
-                            [0, 4.0],
-                            [0, -4.0]])
+        #all_mus = np.array([[-2, 0],
+        #                    [2, 0],
+        #                    [-4, 0],
+        #                    [4, 0],
+        #                    [-2, 0],
+        #                    [2, 0],
+        #                    [0, 4.0],
+        #                    [0, -4.0]])
         sigma_shape = 6
         sigma_scale = 20
-        intercept = 0.25
+        intercept = 1.0
     else:
         all_mus = np.array([[-2, 0],
                             [2, 0],
@@ -545,7 +545,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     n_groups = mus.shape[0]
 
     # sample initial distribution
-    w0 = rng.dirichlet(np.repeat(10, n_groups))  # E[p] = 1 / n_groups
+    #w0 = rng.dirichlet(np.repeat(10, n_groups))  # E[p] = 1 / n_groups
+    w0 = np.array([0.5, 0.5])
 
     # set-up transition distribution
     with np.errstate(divide='ignore'):
@@ -652,15 +653,18 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
 
     # merge groups 6 -> 4
     old_mus = mus.copy()
-    new_groups = [2, 3, 6, 7]
+    #new_groups = [2, 3, 6, 7]
+    new_groups = [4, 5, 6, 7]
     mus = all_mus[new_groups].copy()
 
+    indices = [2, 3, 4, 5]
+    #indices = [0, 1, 4, 5]
     with np.errstate(divide='ignore'):
         wt_merge = 1. / pairwise_distances(old_mus, mus)
     infinite_mask = ~np.isfinite(wt_merge)
     wt_merge[infinite_mask] = 0
     wt_merge[infinite_mask] = (
-        sticky_const * np.max(wt_merge, axis=1)[[0, 1, 4, 5]])
+        sticky_const * np.max(wt_merge, axis=1)[indices])
     wt_merge /= wt_merge.sum(axis=1).reshape(-1, 1)
 
     zt = np.zeros(n_nodes, dtype=np.int)
@@ -671,7 +675,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                                     p=wt_merge[group_id, :], size=group_size)
 
     Xt = np.zeros((n_nodes, 2), dtype=np.float64)
-    for group_id in [0, 1, 4, 5]:
+    for group_id in indices:
         group_mask = zt == group_id + n_groups
         group_size = np.sum(group_mask)
         Xt[group_mask, :] = (

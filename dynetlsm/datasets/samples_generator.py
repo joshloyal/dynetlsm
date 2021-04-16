@@ -386,16 +386,16 @@ def synthetic_static_community_dynamic_network(
                         [1.5, 0],
                         [0, 2.0],
                         [0, -2.0]])
-        mus = np.array([[-4, 0],
-                        [4, 0],
-                        [-2, 0],
-                        [2, 0],
-                        [0, 4.0],
-                        [0, -4.0]])
+        #mus = np.array([[-4, 0],
+        #                [4, 0],
+        #                [-2, 0],
+        #                [2, 0],
+        #                [0, 4.0],
+        #                [0, -4.0]])
         sigma_shape = 6
         sigma_scale = 20
-        #intercept = 1.0
-        intercept = 0.25
+        intercept = 1.0
+        #intercept = 0.25
     elif simulation_type == 'hard':
         mus = np.array([[-4, 0],
                         [4, 0],
@@ -405,7 +405,8 @@ def synthetic_static_community_dynamic_network(
                         [0, -4.0]])
         sigma_shape = 6
         sigma_scale = 0.5
-        intercept = 0.25
+        #intercept = 0.25
+        intercept = 1.0
     else:
         mus = np.array([[-4, 0],
                         [4, 0],
@@ -525,11 +526,19 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [4, 0],
                             [-2, 0],
                             [2, 0],
-                            [0, 4.0],
-                            [0, -4.0]])
+                            [0, 5.0],
+                            [0, -5.0]])
+        #all_mus = np.array([[-1.5, 0.],
+        #                    [1.5, 0.],
+        #                    [-3, 0],
+        #                    [3, 0],
+        #                    [-1.5, 0.],
+        #                    [1.5, 0.],
+        #                    [0, 2.0],
+        #                    [0, -2.0]])
         sigma_shape = 6
         sigma_scale = 0.5
-        intercept = 0.25
+        intercept = 1.0
 
     n_groups_total = all_mus.shape[0]
 
@@ -654,11 +663,13 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     # merge groups 6 -> 4
     old_mus = mus.copy()
     #new_groups = [2, 3, 6, 7]
-    new_groups = [4, 5, 6, 7]
+    new_groups = [2, 3, 4, 5]
+    #new_groups = [4, 5, 6, 7]
     mus = all_mus[new_groups].copy()
 
-    indices = [2, 3, 4, 5]
     #indices = [0, 1, 4, 5]
+    indices = [0, 1, 2, 3]
+    #indices = [2, 3, 4, 5]
     with np.errstate(divide='ignore'):
         wt_merge = 1. / pairwise_distances(old_mus, mus)
     infinite_mask = ~np.isfinite(wt_merge)

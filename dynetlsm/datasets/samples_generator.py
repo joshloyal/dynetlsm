@@ -21,7 +21,7 @@ __all__ = ['network_from_dynamic_latent_space',
            'simple_merging_dynamic_network',
            'merging_dynamic_network',
            'synthetic_static_community_dynamic_network',
-           'synthetic_dynamic_network']
+           'synthetic_dynamic_network', 'inhomogeneous_simulation']
 
 
 def forecast_probas(X, z, wt, lmbda, mu, intercept):
@@ -481,6 +481,218 @@ def synthetic_static_community_dynamic_network(
     return Y, X, z, intercept, probas, proba_ahead
 
 
+def inhomogeneous_simulation(n_nodes=120, simulation_type='easy', sticky_const=20,
+                             random_state=42):
+    rng = check_random_state(random_state)
+
+    intercept = 1.0
+    lmbda = 0.9
+    if simulation_type == 'easy':
+        all_mus = np.array([[-2, 0],
+                            [2, 0],
+                            [-4, 0],
+                            [4, 0],
+                            [0, 5.0],
+                            [0, -5.0]])
+        sigma_shape = 6
+        sigma_scale = 20
+    else:
+        all_mus = np.array([[-2, 0],
+                            [2, 0],
+                            [-4, 0],
+                            [4, 0],
+                            [0, 5.0],
+                            [0, -5.0]])
+        sigma_shape = 6
+        sigma_scale = 0.5
+
+    n_groups_total = all_mus.shape[0]
+
+    # group spread
+    sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
+                                    size=6))
+
+    # initial groups
+    mus = all_mus[:2].copy()
+    n_groups = mus.shape[0]
+
+    # sample initial distribution
+    w0 = np.array([0.5, 0.5])
+
+    # set-up transition distribution
+    with np.errstate(divide='ignore'):
+        wt = 1. / pairwise_distances(mus)
+
+    # calculate self-transition probabilities
+    diag_indices = np.diag_indices_from(wt)
+    wt[diag_indices] = 0
+    wt[diag_indices] = sticky_const * np.max(wt, axis=1)
+    wt /= wt.sum(axis=1).reshape(-1, 1)
+
+    # run data generating process
+    X, z = [], []
+
+    # t = 0
+    z0 = rng.choice(np.arange(n_groups), p=w0, size=n_nodes)
+    X0 = np.zeros((n_nodes, 2), dtype=np.float64)
+    for group_id in range(n_groups):
+        group_size = np.sum(z0 == group_id)
+        X0[z0 == group_id, :] = (sigmas[group_id] * rng.randn(group_size, 2) +
+                                 mus[group_id])
+    X.append(X0)
+    z.append(z0)
+
+    for t in range(1, 3):
+        zt = np.zeros(n_nodes, dtype=np.int)
+        for group_id in range(n_groups):
+            group_mask = z[t - 1] == group_id
+            zt[group_mask] = rng.choice(np.arange(n_groups), p=wt[group_id, :],
+                                        size=np.sum(group_mask))
+
+        Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+        for group_id in range(n_groups):
+            group_mask = zt == group_id
+            group_size = np.sum(group_mask)
+            Xt[group_mask, :] = (
+                sigmas[group_id] * rng.randn(group_size, 2) + (
+                    lmbda * mus[group_id] + (1 - lmbda) * X[t-1][group_mask, :])
+            )
+
+        X.append(Xt)
+        z.append(zt)
+
+    # split into 6 clusters (2 -> 6)
+    old_mus = mus.copy()
+    mus = all_mus.copy()
+    n_groups_old = old_mus.shape[0]
+    n_groups = mus.shape[0]
+    with np.errstate(divide='ignore'):
+        wt_merge = 1. / pairwise_distances(old_mus, mus)
+
+    # self-transitions
+    infinite_mask = ~np.isfinite(wt_merge)
+    wt_merge[infinite_mask] = 0
+    wt_merge[infinite_mask] = np.max(wt_merge, axis=1)
+    wt_merge /= wt_merge.sum(axis=1).reshape(-1, 1)
+
+    zt = np.zeros(n_nodes, dtype=np.int)
+    for group_id in range(n_groups_old):
+        group_mask = z[-1] == group_id
+        group_size = np.sum(group_mask)
+        zt[group_mask] = rng.choice(np.arange(n_groups),
+                                    p=wt_merge[group_id, :], size=group_size)
+
+    Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+    for group_id in range(n_groups):
+        group_mask = zt == group_id
+        group_size = np.sum(group_mask)
+        Xt[group_mask, :] = (
+            sigmas[group_id] * rng.randn(group_size, 2) +
+            lmbda * mus[group_id] +
+            (1 - lmbda) * X[t - 1][group_mask, :]
+        )
+    z.append(zt)
+    X.append(Xt)
+
+    # run the process forward in time
+    with np.errstate(divide='ignore'):
+        wt = 1. / pairwise_distances(mus)
+
+    diag_indices = np.diag_indices_from(wt)
+    wt[diag_indices] = 0
+    wt[diag_indices] = sticky_const * np.max(wt, axis=1)
+    wt = wt / wt.sum(axis=1).reshape(-1, 1)
+
+    for t in range(4, 7):
+        zt = np.zeros(n_nodes, dtype=np.int)
+        for group_id in range(n_groups):
+            group_mask = z[t-1] == group_id
+            group_size = np.sum(group_mask)
+            zt[group_mask] = rng.choice(np.arange(n_groups),
+                                        p=wt[group_id, :], size=group_size)
+
+        Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+        for group_id in range(n_groups):
+            group_mask = zt == group_id
+            group_size = np.sum(zt == group_id)
+            Xt[group_mask, :] = (
+                sigmas[group_id] * rng.randn(group_size, 2) +
+                lmbda * mus[group_id] +
+                (1 - lmbda) * X[t-1][group_mask, :]
+            )
+        z.append(zt)
+        X.append(Xt)
+
+    # merge groups 6 -> 4
+    old_mus = mus.copy()
+    n_groups_old = old_mus.shape[0]
+    mus = all_mus[:4].copy()
+    n_groups = mus.shape[0]
+    with np.errstate(divide='ignore'):
+        wt_merge = 1. / pairwise_distances(old_mus, mus)
+    infinite_mask = ~np.isfinite(wt_merge)
+    wt_merge[infinite_mask] = 0
+    wt_merge[infinite_mask] = (
+        sticky_const * np.max(wt_merge, axis=1)[:n_groups])
+    wt_merge /= wt_merge.sum(axis=1).reshape(-1, 1)
+
+    zt = np.zeros(n_nodes, dtype=np.int)
+    for group_id in range(n_groups_old):
+        group_mask = z[-1] == group_id
+        group_size = np.sum(group_mask)
+        zt[group_mask] = rng.choice(np.arange(n_groups),
+                                    p=wt_merge[group_id, :], size=group_size)
+
+    Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+    for group_id in range(n_groups):
+        group_mask = zt == group_id
+        group_size = np.sum(group_mask)
+        Xt[group_mask, :] = (
+            sigmas[group_id] * rng.randn(group_size, 2) +
+            lmbda * mus[group_id] +
+            (1 - lmbda) * X[t - 1][group_mask, :]
+        )
+    z.append(zt)
+    X.append(Xt)
+
+    # run the process forward in time
+    with np.errstate(divide='ignore'):
+        wt = 1. / pairwise_distances(mus)
+
+    diag_indices = np.diag_indices_from(wt)
+    wt[diag_indices] = 0
+    wt[diag_indices] = sticky_const * np.max(wt, axis=1)
+    wt = wt / wt.sum(axis=1).reshape(-1, 1)
+    for t in range(8, 10):
+        zt = np.zeros(n_nodes, dtype=np.int)
+        for group_id in range(n_groups):
+            group_mask = z[t-1] == group_id
+            group_size = np.sum(group_mask)
+            zt[group_mask] = rng.choice(np.arange(n_groups),
+                                        p=wt[group_id, :], size=group_size)
+
+        Xt = np.zeros((n_nodes, 2), dtype=np.float64)
+        for group_id in range(n_groups):
+            group_mask = zt == group_id
+            group_size = np.sum(zt == group_id)
+            Xt[group_mask, :] = (
+                sigmas[group_id] * rng.randn(group_size, 2) +
+                lmbda * mus[group_id] +
+                (1 - lmbda) * X[t-1][group_mask, :]
+            )
+
+        z.append(zt)
+        X.append(Xt)
+
+    X = np.stack(X, axis=0)
+    z = np.vstack(z)
+
+    Y, probas = network_from_dynamic_latent_space(
+        X, intercept=intercept, radii=None, random_state=rng)
+
+    return Y, X, z, intercept, all_mus, sigmas, probas
+
+
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                               intercept=1.0, lmbda=0.8, sticky_const=20.,
                               sigma_shape=6, sigma_scale=20, is_directed=False,
@@ -514,8 +726,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [2, 0],
                             [-4, 0],
                             [4, 0],
-                            [-2, 0],
-                            [2, 0],
+                            #[-2, 0],
+                            #[2, 0],
                             [0, 5.0],
                             [0, -5.0]])
         sigma_shape = 6
@@ -527,8 +739,8 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [2, 0],
                             [-4, 0],
                             [4, 0],
-                            [-2, 0],
-                            [2, 0],
+                            #[-2, 0],
+                            #[2, 0],
                             [0, 5.0],
                             [0, -5.0]])
         #all_mus = np.array([[-1.5, 0.],
@@ -550,8 +762,10 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     if is_directed:
         sigma_scale = 1e5
         sigma_shape = 13
+    #sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
+    #                                size=n_groups_total))
     sigmas = np.sqrt(1. / rng.gamma(shape=sigma_shape, scale=sigma_scale,
-                                    size=n_groups_total))
+                                    size=6))
 
     # initial groups
     mus = all_mus[:2].copy()
@@ -605,7 +819,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
 
     # split into 6 clusters (2 -> 6)
     old_mus = mus.copy()
-    mus = all_mus[2:].copy()
+    mus = all_mus.copy()
     n_groups_new = mus.shape[0]
     with np.errstate(divide='ignore'):
         wt_merge = 1. / pairwise_distances(old_mus, mus)
@@ -620,15 +834,17 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     for group_id in range(n_groups):
         group_mask = z[-1] == group_id
         group_size = np.sum(group_mask)
-        zt[group_mask] = rng.choice(n_groups + np.arange(n_groups_new),
+        #zt[group_mask] = rng.choice(n_groups + np.arange(n_groups_new),
+        #                            p=wt_merge[group_id, :], size=group_size)
+        zt[group_mask] = rng.choice(np.arange(n_groups_new),
                                     p=wt_merge[group_id, :], size=group_size)
 
     Xt = np.zeros((n_nodes, 2), dtype=np.float64)
     for group_id in range(n_groups_new):
-        group_mask = zt == group_id + n_groups
+        group_mask = zt == group_id #+ n_groups
         group_size = np.sum(group_mask)
         Xt[group_mask, :] = (
-            sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
+            sigmas[group_id] * rng.randn(group_size, 2) +
             lmbda * mus[group_id] +
             (1 - lmbda) * X[t - 1][group_mask, :]
         )
@@ -647,17 +863,17 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     for t in range(time_chunks + 1, 2 * time_chunks):
         zt = np.zeros(n_nodes, dtype=np.int)
         for group_id in range(n_groups_new):
-            group_mask = z[t-1] == group_id + n_groups
+            group_mask = z[t-1] == group_id #+ n_groups
             group_size = np.sum(group_mask)
-            zt[group_mask] = rng.choice(n_groups + np.arange(n_groups_new),
+            zt[group_mask] = rng.choice(np.arange(n_groups_new),
                                         p=wt[group_id, :], size=group_size)
 
         Xt = np.zeros((n_nodes, 2), dtype=np.float64)
         for group_id in range(n_groups_new):
-            group_mask = zt == group_id + n_groups
-            group_size = np.sum(zt == group_id + n_groups)
+            group_mask = zt == group_id #+ n_groups
+            group_size = np.sum(zt == group_id)
             Xt[group_mask, :] = (
-                sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
+                sigmas[group_id] * rng.randn(group_size, 2) +
                 lmbda * mus[group_id] +
                 (1 - lmbda) * X[t-1][group_mask, :]
             )
@@ -666,9 +882,10 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
 
     # merge groups 6 -> 4
     old_mus = mus.copy()
-    #new_groups = [2, 3, 6, 7]
-    new_groups = [2, 3, 4, 5]
-    #new_groups = [4, 5, 6, 7]
+    ##new_groups = [2, 3, 6, 7]
+    #new_groups = [2, 3, 4, 5]
+    ##new_groups = [4, 5, 6, 7]
+    new_groups = [0, 1, 2, 3]
     mus = all_mus[new_groups].copy()
 
     #indices = [0, 1, 4, 5]
@@ -684,18 +901,18 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
 
     zt = np.zeros(n_nodes, dtype=np.int)
     for group_id in range(n_groups_new):
-        group_mask = z[-1] == group_id + n_groups
+        group_mask = z[-1] == group_id #+ n_groups
         group_size = np.sum(group_mask)
         zt[group_mask] = rng.choice(new_groups,
                                     p=wt_merge[group_id, :], size=group_size)
 
     Xt = np.zeros((n_nodes, 2), dtype=np.float64)
     for group_id in indices:
-        group_mask = zt == group_id + n_groups
+        group_mask = zt == group_id #+ n_groups
         group_size = np.sum(group_mask)
         Xt[group_mask, :] = (
-            sigmas[group_id + n_groups] * rng.randn(group_size, 2) +
-            lmbda * old_mus[group_id] +
+            sigmas[group_id] * rng.randn(group_size, 2) +
+            lmbda * mus[group_id] +
             (1 - lmbda) * X[t - 1][group_mask, :]
         )
     z.append(zt)
@@ -709,7 +926,6 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
     wt[diag_indices] = 0
     wt[diag_indices] = sticky_const * np.max(wt, axis=1)
     wt = wt / wt.sum(axis=1).reshape(-1, 1)
-
     for t in range(2 * time_chunks + 1, n_time_steps + 1):
         zt = np.zeros(n_nodes, dtype=np.int)
         for idx, group_id in enumerate(new_groups):
@@ -724,7 +940,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
             group_size = np.sum(zt == group_id)
             Xt[group_mask, :] = (
                 sigmas[group_id] * rng.randn(group_size, 2) +
-                lmbda * all_mus[group_id] +
+                lmbda * mus[group_id] +
                 (1 - lmbda) * X[t-1][group_mask, :]
             )
 

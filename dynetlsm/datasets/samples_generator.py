@@ -380,33 +380,35 @@ def synthetic_static_community_dynamic_network(
 
     # group locations
     if simulation_type == 'easy':
-        mus = np.array([[-3, 0],
-                        [3, 0],
-                        [-1.5, 0],
-                        [1.5, 0],
-                        [0, 2.0],
-                        [0, -2.0]])
-        #mus = np.array([[-4, 0],
-        #                [4, 0],
-        #                [-2, 0],
-        #                [2, 0],
-        #                [0, 4.0],
-        #                [0, -4.0]])
+        #mus = np.array([[-3, 0],
+        #                [3, 0],
+        #                [-1.5, 0],
+        #                [1.5, 0],
+        #                [0, 2.0],
+        #                [0, -2.0]])
+        mus = np.array([[-4, 0],
+                        [4, 0],
+                        [-2, 0],
+                        [2, 0],
+                        [0, 5.0],
+                        [0, -5.0]])
         sigma_shape = 6
         sigma_scale = 20
         intercept = 1.0
+        lmbda = 0.8
         #intercept = 0.25
     elif simulation_type == 'hard':
         mus = np.array([[-4, 0],
                         [4, 0],
                         [-2, 0],
                         [2, 0],
-                        [0, 4.0],
-                        [0, -4.0]])
+                        [0, 5.0],
+                        [0, -5.0]])
         sigma_shape = 6
         sigma_scale = 0.5
         #intercept = 0.25
         intercept = 1.0
+        lmbda = 0.8
     else:
         mus = np.array([[-4, 0],
                         [4, 0],
@@ -500,25 +502,26 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                             [0, 2.0],
                             [0, -2.0]]) / 100.
     elif simulation_type == 'easy':
-        all_mus = np.array([[-1.5, 0.],
-                            [1.5, 0.],
-                            [-3, 0],
-                            [3, 0],
-                            [-1.5, 0.],
-                            [1.5, 0.],
-                            [0, 2.0],
-                            [0, -2.0]])
-        #all_mus = np.array([[-2, 0],
-        #                    [2, 0],
-        #                    [-4, 0],
-        #                    [4, 0],
-        #                    [-2, 0],
-        #                    [2, 0],
-        #                    [0, 4.0],
-        #                    [0, -4.0]])
+        #all_mus = np.array([[-1.5, 0.],
+        #                    [1.5, 0.],
+        #                    [-3, 0],
+        #                    [3, 0],
+        #                    [-1.5, 0.],
+        #                    [1.5, 0.],
+        #                    [0, 2.0],
+        #                    [0, -2.0]])
+        all_mus = np.array([[-2, 0],
+                            [2, 0],
+                            [-4, 0],
+                            [4, 0],
+                            [-2, 0],
+                            [2, 0],
+                            [0, 5.0],
+                            [0, -5.0]])
         sigma_shape = 6
         sigma_scale = 20
         intercept = 1.0
+        lmbda = 0.9
     else:
         all_mus = np.array([[-2, 0],
                             [2, 0],
@@ -539,6 +542,7 @@ def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
         sigma_shape = 6
         sigma_scale = 0.5
         intercept = 1.0
+        lmbda = 0.9
 
     n_groups_total = all_mus.shape[0]
 

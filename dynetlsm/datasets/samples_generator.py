@@ -603,7 +603,7 @@ def inhomogeneous_simulation(n_nodes=120, simulation_type='easy', sticky_const=2
     wt[diag_indices] = sticky_const * np.max(wt, axis=1)
     wt = wt / wt.sum(axis=1).reshape(-1, 1)
 
-    for t in range(4, 7):
+    for t in range(4, 6):
         zt = np.zeros(n_nodes, dtype=np.int)
         for group_id in range(n_groups):
             group_mask = z[t-1] == group_id
@@ -663,7 +663,7 @@ def inhomogeneous_simulation(n_nodes=120, simulation_type='easy', sticky_const=2
     wt[diag_indices] = 0
     wt[diag_indices] = sticky_const * np.max(wt, axis=1)
     wt = wt / wt.sum(axis=1).reshape(-1, 1)
-    for t in range(8, 10):
+    for t in range(7, 10):
         zt = np.zeros(n_nodes, dtype=np.int)
         for group_id in range(n_groups):
             group_mask = z[t-1] == group_id

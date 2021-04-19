@@ -148,6 +148,7 @@ class DynamicNetworkLPCM(object):
                  b='auto',
                  lambda_prior=0.9,
                  lambda_variance_prior=0.01,
+                 dirichlet_prior='uniform',
                  sigma_prior_std=4.0,
                  mean_variance_prior_std=4.0,
                  step_size_X='auto',
@@ -162,6 +163,7 @@ class DynamicNetworkLPCM(object):
         self.selection_type = selection_type
         self.n_features = n_features
         self.n_components = n_components
+        self.dirichlet_prior = dirichlet_prior
         self.step_size_X = step_size_X
         self.intercept_prior = intercept_prior
         self.intercept_variance_prior = intercept_variance_prior
@@ -306,6 +308,11 @@ class DynamicNetworkLPCM(object):
                          n_control=self.n_control,
                          n_resample_control=self.n_resample_control,
                          random_state=rng)
+
+        if self.dirichlet_prior == 'uniform':
+            self.dirichlet_prior_ = 1.
+        else:
+            self.dirichlet_prior_ = 1. / self.n_components
 
         # store missing value imputation counts
         if sample_missing:
@@ -485,12 +492,13 @@ class DynamicNetworkLPCM(object):
                 random_state=rng)
 
             # sample initial distribution (w0)
-            init_weights = sample_dirichlet(1 + nk[0], random_state=rng)
+            init_weights = sample_dirichlet(
+                 self.dirichlet_prior_ + nk[0], random_state=rng)
 
             # sample transition distributions (w)
             for k in range(self.n_components):
                 trans_weights[k] = sample_dirichlet(
-                    1 + n[1:, k].sum(axis=0), random_state=rng)
+                     self.dirichlet_prior_ + n[1:, k].sum(axis=0), random_state=rng)
 
             # sample cluster means
             for k in range(self.n_components):
@@ -685,12 +693,13 @@ class DynamicNetworkLPCM(object):
         n_time_steps, n_nodes, _ = X.shape
 
         # initial distribution (w0) log-likelihood
-        loglik = dirichlet_logpdf(init_weights, np.ones(self.n_components))
+        loglik = dirichlet_logpdf(
+            init_weights, self.dirichlet_prior_ * np.ones(self.n_components))
 
         # transition probabilities (w) log-likelihood
         for k in range(self.n_components):
             loglik += dirichlet_logpdf(
-                trans_weights[k], np.ones(self.n_components))
+                trans_weights[k], self.dirichlet_prior_ * np.ones(self.n_components))
 
         # log-likelihood of each node's label markov chain
         for i in range(n_nodes):

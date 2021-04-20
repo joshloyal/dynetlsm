@@ -883,7 +883,7 @@ class DynamicNetworkHDPLPCM(object):
                     1, p=(valid_n_dot / (valid_n_dot + alpha_kappa)))
             r = rng.beta(alpha_kappa + 1, valid_n_dot)
 
-            shape = (self.alpha_kapp_shape +
+            shape = (self.alpha_kappa_shape +
                      np.sum(m[1:], axis=2)[valid_indices].sum() -
                      np.sum(s))
             scale = self.alpha_kappa_scale - np.sum(np.log(r))

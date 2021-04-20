@@ -392,7 +392,7 @@ class DynamicNetworkHDPLPCM(object):
                  burn=2500,
                  thin=None,
                  gamma=1.0,
-                 gamma_prior_shape=1.0
+                 gamma_prior_shape=1.0,
                  gamma_prior_scale=0.1,
                  alpha_init=1.0,
                  alpha_init_shape=1.,

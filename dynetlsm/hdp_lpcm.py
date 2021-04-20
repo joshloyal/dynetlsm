@@ -392,9 +392,15 @@ class DynamicNetworkHDPLPCM(object):
                  burn=2500,
                  thin=None,
                  gamma=1.0,
+                 gamma_prior_shape=1.0
+                 gamma_prior_scale=0.1,
                  alpha_init=1.0,
+                 alpha_init_shape=1.,
+                 alpha_init_scale=1.,
                  alpha=1.0,
                  kappa=4.0,
+                 alpha_kappa_shape=5,
+                 alpha_kappa_scale=0.1,
                  intercept_prior='auto',
                  intercept_variance_prior=2,
                  mean_variance_prior='auto',
@@ -424,8 +430,14 @@ class DynamicNetworkHDPLPCM(object):
         self.b = b
         self.alpha_init = alpha_init
         self.alpha = alpha
+        self.alpha_init_shape = alpha_init_shape
+        self.alpha_init_scale = alpha_init_scale
         self.gamma = gamma
+        self.gamma_prior_shape = gamma_prior_shape
+        self.gamma_prior_scale = gamma_prior_scale
         self.kappa = kappa
+        self.alpha_kappa_shape = alpha_kappa_shape
+        self.alpha_kappa_scale = alpha_kappa_scale
         self.lambda_prior = lambda_prior
         self.lambda_variance_prior = lambda_variance_prior
         self.mean_variance_prior_std = mean_variance_prior_std
@@ -844,8 +856,8 @@ class DynamicNetworkHDPLPCM(object):
                             self.gamma,
                             n_clusters=np.sum(m_bar > 0),
                             n_samples=np.sum(m_bar),
-                            prior_shape=1.0,
-                            prior_scale=0.1,
+                            prior_shape=self.gamma_prior_shape,
+                            prior_scale=self.gamma_prior_scale,
                             random_state=rng)
 
             # sample concentration parameter of the initial distribution
@@ -857,12 +869,11 @@ class DynamicNetworkHDPLPCM(object):
                                 self.alpha_init,
                                 n_clusters=np.sum(m[0, 0]),
                                 n_samples=n_nodes,
-                                prior_shape=1.0,
-                                prior_scale=1.0,
+                                prior_shape=self.alpha_init_shape,
+                                prior_scale=self.alpha_init_scale,
                                 random_state=rng)
 
             # sample alpha + kappa
-            ak_shape, ak_scale = 5, .1
             alpha_kappa = self.alpha + self.kappa
 
             n_dot = np.sum(n[1:], axis=2)
@@ -872,10 +883,10 @@ class DynamicNetworkHDPLPCM(object):
                     1, p=(valid_n_dot / (valid_n_dot + alpha_kappa)))
             r = rng.beta(alpha_kappa + 1, valid_n_dot)
 
-            shape = (ak_shape +
+            shape = (self.alpha_kapp_shape +
                      np.sum(m[1:], axis=2)[valid_indices].sum() -
                      np.sum(s))
-            scale = ak_scale - np.sum(np.log(r))
+            scale = self.alpha_kappa_scale - np.sum(np.log(r))
             alpha_kappa = rng.gamma(shape=shape, scale=1. / scale)
 
             # sample rho

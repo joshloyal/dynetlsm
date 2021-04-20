@@ -45,8 +45,13 @@ def flatten(l):
     return [item for sublist in l for item in sublist]
 
 
+def cmap_to_hex(cmap):
+    return np.asarray([to_hex(c) for c in cmap.colors])
+
+
 def get_color20():
-    colors = np.asarray([to_hex(c) for c in plt.cm.get_cmap('tab20').colors])
+    #colors = np.asarray([to_hex(c) for c in plt.cm.get_cmap('tab20').colors])
+    colors = cmap_to_hex(plt.cm.get_cmap('tab20'))
 
     # the most common case is the need for two colors. The first two do
     # not have a lot of contrast so swap them
@@ -837,7 +842,7 @@ def transition_freqs(z0, z1, n_groups):
 
 
 def alluvial_plot(z, figsize=(10, 6), margin=0.01, rec_width=0.01, alpha=0.5,
-                  edgecolor='black', text_map=None):
+                  edgecolor='black', text_map=None, cmap=None):
     fig, ax = plt.subplots(figsize=figsize)
 
     n_time_steps, n_nodes = z.shape
@@ -851,10 +856,13 @@ def alluvial_plot(z, figsize=(10, 6), margin=0.01, rec_width=0.01, alpha=0.5,
     z = encoder.transform(z.ravel()).reshape(n_time_steps, n_nodes)
     n_groups = encoder.classes_.shape[0]
 
-    if n_groups <= 20:
-        colors = get_color20()
+    if cmap is not None:
+        colors = cmap_to_hex(cmap)
     else:
-        colors = sns.color_palette('husl', n_colors=n_groups)
+        if n_groups <= 20:
+            colors = get_color20()
+        else:
+            colors = sns.color_palette('husl', n_colors=n_groups)
 
     # determine height of group partitions
     rec_heights = np.zeros((n_time_steps, n_groups, 2), dtype=np.float64)

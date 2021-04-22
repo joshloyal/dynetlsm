@@ -393,14 +393,14 @@ class DynamicNetworkHDPLPCM(object):
                  thin=None,
                  gamma=1.0,
                  gamma_prior_shape=1.0,
-                 gamma_prior_scale=0.1,
+                 gamma_prior_rate=0.1,
                  alpha_init=1.0,
                  alpha_init_shape=1.,
-                 alpha_init_scale=1.,
+                 alpha_init_rate=1.,
                  alpha=1.0,
                  kappa=4.0,
                  alpha_kappa_shape=5,
-                 alpha_kappa_scale=0.1,
+                 alpha_kappa_rate=0.1,
                  intercept_prior='auto',
                  intercept_variance_prior=2,
                  mean_variance_prior='auto',
@@ -431,13 +431,13 @@ class DynamicNetworkHDPLPCM(object):
         self.alpha_init = alpha_init
         self.alpha = alpha
         self.alpha_init_shape = alpha_init_shape
-        self.alpha_init_scale = alpha_init_scale
+        self.alpha_init_rate = alpha_init_rate
         self.gamma = gamma
         self.gamma_prior_shape = gamma_prior_shape
-        self.gamma_prior_scale = gamma_prior_scale
+        self.gamma_prior_rate = gamma_prior_rate
         self.kappa = kappa
         self.alpha_kappa_shape = alpha_kappa_shape
-        self.alpha_kappa_scale = alpha_kappa_scale
+        self.alpha_kappa_rate = alpha_kappa_rate
         self.lambda_prior = lambda_prior
         self.lambda_variance_prior = lambda_variance_prior
         self.mean_variance_prior_std = mean_variance_prior_std
@@ -652,7 +652,7 @@ class DynamicNetworkHDPLPCM(object):
 
         # NOTE: This sets the scale of the cluster sizes. Default is to assume
         # there is no cluster structure.
-        # b ~ Gamma(c/2, d/2) hyper-prior chossen so that
+        # b ~ Gamma(c/2, 2/d) hyper-prior chosen so that
         #
         # E(b) = b
         # sqrt(Var(b)) = sigma_prior_std * E(b)
@@ -857,7 +857,7 @@ class DynamicNetworkHDPLPCM(object):
                             n_clusters=np.sum(m_bar > 0),
                             n_samples=np.sum(m_bar),
                             prior_shape=self.gamma_prior_shape,
-                            prior_scale=self.gamma_prior_scale,
+                            prior_rate=self.gamma_prior_rate,
                             random_state=rng)
 
             # sample concentration parameter of the initial distribution
@@ -870,7 +870,7 @@ class DynamicNetworkHDPLPCM(object):
                                 n_clusters=np.sum(m[0, 0]),
                                 n_samples=n_nodes,
                                 prior_shape=self.alpha_init_shape,
-                                prior_scale=self.alpha_init_scale,
+                                prior_rate=self.alpha_init_rate,
                                 random_state=rng)
 
             # sample alpha + kappa
@@ -886,8 +886,8 @@ class DynamicNetworkHDPLPCM(object):
             shape = (self.alpha_kappa_shape +
                      np.sum(m[1:], axis=2)[valid_indices].sum() -
                      np.sum(s))
-            scale = self.alpha_kappa_scale - np.sum(np.log(r))
-            alpha_kappa = rng.gamma(shape=shape, scale=1. / scale)
+            rate = self.alpha_kappa_rate - np.sum(np.log(r))
+            alpha_kappa = rng.gamma(shape=shape, scale=1. / rate)
 
             # sample rho
             # prior mean ~ 0.8, highly skewed to a high stickiness

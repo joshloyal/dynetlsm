@@ -1068,8 +1068,8 @@ class DynamicNetworkHDPLPCM(object):
         for idx in range(self.Xs_.shape[0]):
             # NOTE: Means should be rotated as well.. How to do this
             #       since they are constant over time?
-            self.Xs_[idx], R = longitudinal_procrustes_rotation(self.X_,
-                                                                self.Xs_[idx])
+            self.Xs_[idx], R = longitudinal_procrustes_rotation(
+                self.X_, self.Xs_[idx])
             self.mus_[idx] = np.dot(self.mus_[idx], R)
 
         # store posterior means

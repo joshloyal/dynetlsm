@@ -15,6 +15,7 @@ from .case_control_likelihood import DirectedCaseControlSampler
 from .distributions import (
     truncated_normal, truncated_normal_logpdf,
     sample_dirichlet, dirichlet_logpdf)
+from .forecast import marginal_forecast
 from .lsm import DynamicNetworkLSM
 from .imputer import SimpleNetworkImputer
 from .latent_space import calculate_distances, longitudinal_kmeans
@@ -494,7 +495,7 @@ class DynamicNetworkHDPLPCM(object):
         return probas
 
     @property
-    def forecast_probas_(self):
+    def forecast_probas_map_(self):
         """Simple plug-in estimate of one-step-ahead probabilities based on
         the MAP estimate."""
         ws = self.trans_weights_[-1][self.z_[-1]]
@@ -505,6 +506,54 @@ class DynamicNetworkHDPLPCM(object):
                 (1 - self.lambda_) * self.X_[-1])
 
         return expit(self.intercept_ - calculate_distances(X_ahead))
+
+    @property
+    def forecast_probas_plugin_(self):
+        n_time_steps, n_nodes, _ = self.Y_fit_.shape
+
+        n_samples = self.zs_.shape[0]
+        sample_ids = np.arange(self.n_burn_, n_samples)
+        X_hat = np.zeros((n_nodes, self.n_features))
+        for i, idx in enumerate(sample_ids):
+            z, _, _, trans_w, mu, sigma = renormalize_weights(
+                self, sample_id=idx)
+
+            ws = trans_w[-1][z[-1]]
+            for g in np.unique(z[-1]):
+                X_hat += (1. / sample_ids.shape[0]) * ws[:, g].reshape(-1, 1) * (
+                    self.lambdas_[idx] * mu[g] +
+                    (1 - self.lambdas_[idx]) * self.Xs_[idx, -1])
+
+            #eta = self.intercepts_[idx] - calculate_distances(X_ahead)
+            #probas += expit(eta) / sample_ids.shape[0]
+
+        return expit(self.intercepts_mean_ - calculate_distances(X_hat))
+
+    @property
+    def forecast_probas_marginalized_(self):
+        n_time_steps, n_nodes, _ = self.Y_fit_.shape
+
+        n_samples = self.zs_.shape[0]
+        sample_ids = np.arange(self.n_burn_, n_samples)
+        X_hat = np.zeros((n_nodes, self.n_features))
+        for i, idx in enumerate(sample_ids):
+            z, _, _, trans_w, mu, sigma = renormalize_weights(
+                self, sample_id=idx)
+
+            ws = trans_w[-1][z[-1]]
+            for g in np.unique(z[-1]):
+                X_hat += (1. / sample_ids.shape[0]) * ws[:, g].reshape(-1, 1) * (
+                    self.lambdas_[idx] * mu[g] +
+                    (1 - self.lambdas_[idx]) * self.Xs_[idx, -1])
+
+        n_burn = self.n_burn_
+        return marginal_forecast(
+            X_hat, self.Xs_[n_burn:, -1],
+            np.ascontiguousarray(self.zs_[n_burn:, -1]),
+            np.ascontiguousarray(self.weights_[n_burn:, -1]),
+            np.ascontiguousarray(self.mus_[n_burn:]),
+            self.sigmas_[n_burn:], self.intercepts_[n_burn:].ravel(),
+            self.lambdas_[n_burn:].ravel(), renormalize=True)
 
     @property
     def auc_(self):
@@ -1019,8 +1068,9 @@ class DynamicNetworkHDPLPCM(object):
         for idx in range(self.Xs_.shape[0]):
             # NOTE: Means should be rotated as well.. How to do this
             #       since they are constant over time?
-            self.Xs_[idx] = longitudinal_procrustes_rotation(self.X_,
-                                                             self.Xs_[idx])
+            self.Xs_[idx], R = longitudinal_procrustes_rotation(self.X_,
+                                                                self.Xs_[idx])
+            self.mus_[idx] = np.dot(self.mus_[idx], R)
 
         # store posterior means
         self.X_mean_ = self.Xs_[n_burn:].mean(axis=0)

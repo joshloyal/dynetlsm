@@ -9,6 +9,7 @@ def repel_labels(X, node_names, datasize, k=1.0, textsize=10, mask=None,
     data_nodes = []
     init_pos = {}
     data_fmt = 'data_{}'
+    mask = [True for i in range(X.shape[0])] if mask is None else mask
 
     if include_number:
         label_fmt = '{} ({})'

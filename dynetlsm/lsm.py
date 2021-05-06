@@ -495,7 +495,7 @@ class DynamicNetworkLSM(object):
             if it > n_iter_procrustes:
                 prev_map = np.argmax(self.logps_[:(n_iter_procrustes+1)])
                 X_ref = self.Xs_[prev_map]
-                X = longitudinal_procrustes_rotation(X_ref, X)
+                X, _ = longitudinal_procrustes_rotation(X_ref, X)
 
             # center latent space across time
             X -= np.mean(X, axis=(0, 1))

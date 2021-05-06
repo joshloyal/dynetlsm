@@ -10,7 +10,7 @@ from .samples_generator import network_from_dynamic_latent_space
 __all__ = ['make_lookup_table', 'detection_limit_simulation']
 
 
-@lru_cache
+@lru_cache()
 def make_lookup_table(
         n_samples=10000, low=0.1, high=2.5, n_bins=100, random_state=42):
     rng = check_random_state(random_state)

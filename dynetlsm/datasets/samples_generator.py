@@ -26,7 +26,7 @@ __all__ = ['network_from_dynamic_latent_space',
            'homogeneous_simulation']
 
 
-def forecast_probas(X, z, wt, lmbda, mu, intercept):
+def forecast_probas_map(X, z, wt, lmbda, mu, intercept):
     """Simple plug-in estimate of one-step-ahead probabilities based on
     the MAP estimate."""
     ws = wt[z]
@@ -37,6 +37,42 @@ def forecast_probas(X, z, wt, lmbda, mu, intercept):
             (1 - lmbda) * X)
 
     return expit(intercept - calculate_distances(X_ahead))
+
+
+def forecast_probas(
+    X, z, wt, lmbda, mu, sigma, intercept, n_samples=5000, random_state=None):
+    """Monte-Carlo estimate of the one-step ahead probabilities."""
+    rng = check_random_state(random_state)
+    n_nodes, n_features = X.shape
+    n_groups = mu.shape[0]
+
+    zt = np.zeros(n_nodes, dtype=np.int)
+    Xt = np.zeros((n_nodes, n_features), dtype=np.float64)
+    probas = np.zeros((n_nodes, n_nodes))
+    for _ in range(n_samples):
+        # sample labels
+        for g in range(n_groups):
+            group_mask = z == g
+            ng = np.sum(group_mask)
+            zt[group_mask] = rng.choice(
+                np.arange(n_groups), p=wt[g, :], size=ng)
+
+        # sample latent positions
+        for g in range(n_groups):
+            group_mask = zt == g
+            ng = np.sum(group_mask)
+            Xt[group_mask, :] = (
+                sigma[g] * rng.randn(ng, 2) + (
+                    lmbda * mu[g] +
+                        (1 - lmbda) * X[group_mask, :])
+            )
+
+        # calculate one-step ahead probabilities
+        probas += (
+            expit(intercept - calculate_distances(Xt)) / n_samples)
+
+    probas[np.diag_indices(n_nodes)] = 0
+    return probas
 
 
 def network_from_dynamic_latent_space(X, intercept=1, coef=1,
@@ -493,7 +529,7 @@ def synthetic_static_community_dynamic_network(
     Y, probas = network_from_dynamic_latent_space(X, intercept=intercept,
                                              random_state=rng)
 
-    proba_ahead = forecast_probas(X[-2], z[-2], wt, lmbda, mus, intercept)
+    proba_ahead = forecast_probas_map(X[-2], z[-2], wt, lmbda, mus, intercept)
 
     return Y, X, z, intercept, probas, proba_ahead
 
@@ -709,7 +745,10 @@ def inhomogeneous_simulation(n_nodes=120, simulation_type='easy',
     Y, probas = network_from_dynamic_latent_space(
         X, intercept=intercept, radii=None, random_state=rng)
 
-    return Y, X, z, intercept, all_mus, sigmas, probas
+    probas_ahead = forecast_probas(
+        X[-2], z[-2], wt, lmbda, mus, sigmas, intercept, random_state=rng)
+
+    return Y, X, z, intercept, all_mus, sigmas, probas, probas_ahead
 
 
 def homogeneous_simulation(
@@ -799,9 +838,11 @@ def homogeneous_simulation(
     Y, probas = network_from_dynamic_latent_space(X, intercept=intercept,
                                              random_state=rng)
 
-    proba_ahead = forecast_probas(X[-2], z[-2], wt, lmbda, mus, intercept)
+    probas_ahead = forecast_probas(
+        X[-2], z[-2], wt, lmbda, mus, sigmas, intercept, random_state=rng)
 
-    return Y, X, z, intercept, probas, proba_ahead
+    return Y, X, z, intercept, probas, probas_ahead
+
 
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,
                               intercept=1.0, lmbda=0.8, sticky_const=20.,

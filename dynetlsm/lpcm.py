@@ -282,6 +282,40 @@ class DynamicNetworkLPCM(object):
             self.sigmas_[n_burn:], self.intercepts_[n_burn:].ravel(),
             self.lambdas_[n_burn:].ravel(), renormalize=False)
 
+    def forecast_probas(self, n_samples=5000):
+        rng = check_random_state(self.random_state)
+        n_nodes = self.X_.shape[1]
+        n_groups = self.mu_.shape[0]
+
+        wt = self.trans_weight_
+        zt = np.zeros(n_nodes, dtype=np.int)
+        Xt = np.zeros((n_nodes, self.n_features), dtype=np.float64)
+        probas = np.zeros((n_nodes, n_nodes))
+        for _ in range(n_samples):
+            # sample labels
+            for g in range(n_groups):
+                group_mask = self.z_[-1] == g
+                ng = np.sum(group_mask)
+                zt[group_mask] = rng.choice(
+                    np.arange(n_groups), p=wt[g, :], size=ng)
+
+            # sample latent positions
+            for g in range(n_groups):
+                group_mask = zt == g
+                ng = np.sum(group_mask)
+                Xt[group_mask, :] = (
+                    self.sigma_[g] * rng.randn(ng, 2) + (
+                        self.lambda_[0] * self.mu_[g] +
+                            (1 - self.lambda_[0]) * self.X_[-1][group_mask, :])
+                )
+
+            # calculate one-step ahead probabilities
+            probas += (
+                expit(self.intercept_ - calculate_distances(Xt)) / n_samples)
+
+        probas[np.diag_indices(n_nodes)] = 0
+        return probas
+
     @property
     def auc_(self):
         """In-sample AUC of the final estimated model."""

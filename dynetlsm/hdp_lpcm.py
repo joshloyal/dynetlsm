@@ -587,6 +587,48 @@ class DynamicNetworkHDPLPCM(object):
         return probas
 
     @property
+    def forecast_probas_pp_(self):
+        rng = check_random_state(self.random_state)
+        n_time_steps, n_nodes, _ = self.Y_fit_.shape
+        n_samples = self.zs_.shape[0]
+        sample_ids = np.arange(self.n_burn_, n_samples)
+        n_samples = sample_ids.shape[0]
+
+        probas = np.zeros((n_nodes, n_nodes))
+        Xt = np.zeros((n_nodes, self.n_features))
+        zt = np.zeros(n_nodes)
+        for i, idx in enumerate(sample_ids):
+            z, _, _, trans_w, mu, sigma = renormalize_weights(
+                self, sample_id=idx)
+            wt = trans_w[-1][z[-1]]
+            n_groups = mu.shape[0]
+
+            # sample labels
+            zt[:] = 0
+            for g in range(n_groups):
+                group_mask = z[-1] == g
+                ng = np.sum(group_mask)
+                zt[group_mask] = rng.choice(
+                    np.arange(n_groups), p=wt[g, :], size=ng)
+
+            # sample latent positions
+            Xt[:] = 0
+            for g in range(n_groups):
+                group_mask = zt == g
+                ng = np.sum(group_mask)
+                Xt[group_mask, :] = (
+                    sigma[g] * rng.randn(ng, 2) + (
+                        self.lambdas_[idx] * mu[g] +
+                            (1 - self.lambdas_[idx]) * self.Xs_[idx, -1][group_mask, :])
+                )
+
+            # calculate one-step ahead probabilities
+            probas += (
+                expit(self.intercepts_[idx] - calculate_distances(Xt)) / n_samples)
+
+        return probas
+
+    @property
     def auc_(self):
         """In-sample AUC of the final estimated model."""
         if not hasattr(self, 'X_'):

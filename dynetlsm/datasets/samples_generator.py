@@ -535,12 +535,17 @@ def synthetic_static_community_dynamic_network(
 
 
 def inhomogeneous_simulation(n_nodes=120, simulation_type='easy',
-                             random_state=42):
+                             lmbda=0.9, intercept=1.0, random_state=42):
     rng = check_random_state(random_state)
 
-    intercept = 1.0
-    lmbda = 0.9
-    if simulation_type == 'easy':
+    if simulation_type == 'custom':
+        lmbda = lmbda
+        intercept = intercept
+    else:
+        lmbda = 0.9
+        intercept = 1.0
+
+    if simulation_type == 'easy' or simulation_type == 'custom':
         all_mus = np.array([[-2, 0],
                             [2, 0],
                             [-4, 0],
@@ -752,11 +757,20 @@ def inhomogeneous_simulation(n_nodes=120, simulation_type='easy',
 
 
 def homogeneous_simulation(
-        n_nodes=120, n_time_steps=6, simulation_type='easy', random_state=42):
+        n_nodes=120, n_time_steps=6, simulation_type='easy',
+        lmbda=0.8, intercept=1.0, random_state=42):
     rng = check_random_state(random_state)
 
+    if simulation_type == 'custom':
+        lmbda = lmbda
+        intercept = intercept
+    else:
+        lmbda = 0.8
+        intercept = 1.0
+
+
     # group locations
-    if simulation_type == 'easy':
+    if simulation_type == 'easy' or simulation_type == 'custom':
         mus = np.array([[-4, 0],
                         [4, 0],
                         [-2, 0],
@@ -765,8 +779,6 @@ def homogeneous_simulation(
                         [0, -5.0]])
         sigma_shape = 6
         sigma_scale = 0.5
-        intercept = 1.0
-        lmbda = 0.8
         sticky_const = 20.
     elif simulation_type == 'hard':
         mus = np.array([[-4, 0],
@@ -777,8 +789,6 @@ def homogeneous_simulation(
                         [0, -5.0]])
         sigma_shape = 3
         sigma_scale = 0.5
-        intercept = 1.0
-        lmbda = 0.8
         sticky_const = 20.
 
     n_groups = mus.shape[0]
@@ -841,7 +851,7 @@ def homogeneous_simulation(
     probas_ahead = forecast_probas(
         X[-2], z[-2], wt, lmbda, mus, sigmas, intercept, random_state=rng)
 
-    return Y, X, z, intercept, probas, probas_ahead
+    return Y, X, z, intercept, mus, sigmas, probas, probas_ahead
 
 
 def synthetic_dynamic_network(n_nodes=120, n_time_steps=9,

@@ -7,7 +7,7 @@ from .array_utils import triu_indices_from_3d
 from .array_utils import nondiag_indices_from_3d
 
 
-def network_auc(Y_true, Y_pred, is_directed=False):
+def network_auc(Y_true, Y_pred, is_directed=False, nan_mask=None):
     if is_directed:
         indices = nondiag_indices_from_3d(Y_true)
     else:
@@ -15,7 +15,17 @@ def network_auc(Y_true, Y_pred, is_directed=False):
 
     y_fit = Y_pred[indices]
     y_true = Y_true[indices]
+
+    if nan_mask is not None:
+        y_fit = y_fit[~nan_mask]
+        y_true = y_true[~nan_mask]
+
     return roc_auc_score(y_true, y_fit)
+
+
+def out_of_sample_auc(y_true, y_pred, test_indices):
+    indices = triu_indices_from_3d(y_true, k=1)
+    return roc_auc_score(y_true[indices][test_indices], y_pred)
 
 
 def _network_auc_directed():

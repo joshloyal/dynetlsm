@@ -14,9 +14,9 @@ cimport numpy as np
 ctypedef np.npy_float64 DOUBLE
 
 
-cdef DOUBLE spherical_normal_log_pdf(DOUBLE[:] x,
-                                     DOUBLE[:] mean,
-                                     double var) nogil:
+cpdef DOUBLE spherical_normal_log_pdf(DOUBLE[:] x,
+                                      DOUBLE[:] mean,
+                                      double var) nogil:
     cdef int k = 0
     cdef int n_features = x.shape[0]
     cdef DOUBLE sum_sq = 0.0

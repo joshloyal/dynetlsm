@@ -85,7 +85,7 @@ def generalized_mds(Y, n_features=2, is_directed=False, unweighted=True,
         X[t] = evecs[:, :n_features] * np.sqrt(evals[:n_features])
 
         # procrustes transformation to fix rotation invariance
-        X[t] = static_procrustes_rotation(X[t-1], X[t])
+        X[t], _ = static_procrustes_rotation(X[t-1], X[t])
 
     # the directed model scales the space so that it is roughly [-1, 1],
     # i.e. same scale as the radii

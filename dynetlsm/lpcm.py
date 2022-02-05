@@ -31,23 +31,19 @@ from .network_likelihoods import (
     directed_network_probas
 )
 from .procrustes import longitudinal_procrustes_rotation
-from .sample_auxillary import sample_tables, sample_mbar
 from .sample_coefficients import sample_intercepts, sample_radii
-from .sample_concentration import sample_concentration_param
-from .sample_labels import sample_labels_block, sample_labels_gibbs
+from .sample_labels import sample_labels_gibbs, sample_labels_block_lpcm
 from .sample_latent_positions import sample_latent_positions_mixture
-from .trace_utils import geweke_diag
 
 
 SMALL_EPS = np.finfo('float64').tiny
 
 
-__all__ = ['DynamicNetworkHDPLPCM']
+__all__ = ['DynamicNetworkLPCM']
 
 
 def init_sampler(Y, is_directed=False,
                  n_iter=100, n_features=2, n_components=10,
-                 gamma=1.0, alpha=1.0, kappa=4.0,
                  lambda_init=0.9, sample_missing=False,
                  n_control=None, n_resample_control=None,
                  random_state=None):
@@ -115,293 +111,37 @@ def init_sampler(Y, is_directed=False,
                                                    random_state=random_state)
 
     # intialize initial distribution to empirical distrbution due to k-means
-    weights = np.zeros((n_iter, n_time_steps, n_components, n_components),
-                       dtype=np.float64)
+    init_weights = np.zeros((n_iter, n_components), dtype=np.float64)
     resp = np.zeros((n_nodes, n_components))
     resp[np.arange(n_nodes), zs[0]] = 1
     nk = resp.sum(axis=0)
-    weights[0, 0, 0] = nk / n_nodes  # convenction store w0 in w[0, 0]
+    init_weights[0] = nk / n_nodes
 
     # blending coefficient set to initial value
     lambdas = np.zeros((n_iter, 1), dtype=np.float64)
     lambdas[0] = lambda_init
 
-    # initialize beta by sampling from the prior
+    # initialize transition distributions by sampling from the uniform prior
     rng = check_random_state(random_state)
-    betas = np.zeros((n_iter, n_components), dtype=np.float64)
-    betas[0] = rng.dirichlet(np.repeat(gamma / n_components, n_components))
+    trans_weights = np.zeros((n_iter, n_components, n_components), dtype=np.float64)
+    for k in range(n_components):
+        trans_weights[0, k] = (1. / n_components) * np.ones(n_components)
 
-    # initialize transition distributions by sampling from beta prior
-    dir_alpha = alpha * betas[0]
-    for t in range(1, n_time_steps):
-        for k in range(n_components):
-            wtk = rng.dirichlet(dir_alpha + kappa * np.eye(n_components)[k])
-            weights[0, t, k] = wtk
-
-    return Xs, intercepts, mus, sigmas, zs, betas, weights, lambdas, radiis, Y_fit
+    return (Xs, intercepts, mus, sigmas, zs, init_weights,
+            trans_weights, lambdas, radiis, Y_fit)
 
 
-class DynamicNetworkHDPLPCM(object):
-    """The HDP Latent Position Cluster Model (HDP-LPCM) [1].
-
-    The hierarchal Dirichlet process latent position cluster model
-    (HDP-LPCM) is a Bayesian nonparametric model for inferring community
-    structure in dynamic (time-varying) networks.
-
-    Based on the latent space model of Hoff et. al. [2], the HDP-LPCM embeds
-    the nodes of the network in a latent Euclidean space. The probability of two
-    nodes forming an edge in the network is proportional to the node's distance
-    in this space. Community structure in the network is a natural result of
-    nodes clustering within this space. To infer this structure, the
-    distribution of the nodes is assumed to follow a Gaussian mixture model.
-
-    The dynamics of the network are the result of nodes moving around the
-    latent space. These movements are assumed to be Markovian in time.
-    The communities still result from nodes clustering together; however,
-    nodes may move between clusters over-time. In addition, new clusters
-    may form or old clusters may die out as time progresses. Such dynamics
-    are naturally modeled with an autoregressive hidden Markov model (AR-HMM).
-    The number of hidden states (or communities) is inferred nonparametrically
-    with a sticky hierarchical Dirichlet process (HDP).
-
-    Parameters
-    ----------
-    n_features : int (default=2)
-        The number of latent features. This is the dimension of the Euclidean
-        latent space.
-
-    n_components : int (default=10)
-        An upper-bound on the number of latent communities. This is the number
-        of components used by the weak-limit approximation to the HDP.
-        The number of estimated communities may be much smaller.
-
-    is_directed : bool (default=False)
-        Whether the network is directed or undirected.
-
-    selection_type : {'vi', 'bic', 'map'} (default='vi')
-        String describing the model selection method. Must be one of::
-
-            'vi': select the model that minimizes the posterior expected
-                  variation of information (VI),
-            'bic': select the model that minimizes the Bayesian information
-                   criterion (BIC),
-            'map': select the maximum a-posterior (MAP) estimate,
-
-    n_iter : int (default=5000)
-        Number of iterations after tuning and burn-in to run the
-        Markov chain Monte Carlo (MCMC) sampler. Total number of iterations
-        is equal to `tune + burn + n_iter`.
-
-    tune : int (default=2500)
-        Number of iterations used to tune the step sizes of the
-        metropolis-hastings samplers.
-
-    tune_interval : int (default=100)
-        Number of iterations to wait before adjusting the random-walk
-        step sizes during the tuning phase.
-
-    burn : int (default=2500)
-        Number of iterations used for burn-in after the tuning phase.
-
-    thin : int or None (default=None)
-        Thinning interval. Every `thin` samples are stored. If `None` then
-        no thinning is performed. To save memory if the number of iteration is
-        large.
-
-    gamma : float, optional (default=1.0)
-        Concentration parameter of the top-level Dirichlet proccess (DP)
-        in the hierarchical Dirichlet process (HDP). Higher values put
-        more mass on a larger number of communities.
-
-    alpha_init : float, optional (default=1.0)
-        Concentration parameter for the DP governing the initial distribution
-        of the hidden Markov model. Larger values put more mass on a
-        larger number of initial communities.
-
-    alpha : float, optional (default=1.0)
-        Concentration parameter for the DPs governing the transition
-        distributions. Larger values put more mass on a larger number of
-        communities.
-
-    kappa : float, optional (default=4.0)
-        Stickyness parameter of the sticky-HDP. Larger values put more
-        mass on self-transitions, i.e., nodes are more likely to remain
-        in the same group over time.
-
-    intercept_prior : float or str, optional (default='auto')
-        The mean of the normal prior placed on the intercept parameter.
-        If 'auto' the prior mean is set to the value inferred during
-        initialization.
-
-    intercept_variance_prior : float, optional (default=2)
-        The variance of the normal prior placed on the intercept parameter
-
-    mean_variance_prior : float or str, optional (default='auto')
-        The cluster means have a normal(0, tau_sq) prior, where
-        E[tau_sq] = mean_variance_prior. Larger values increase the size of
-        the latent space. If 'auto' then prior parameters are chosen such that
-        sqrt(Var(tau_sq)) = mean_variance_prior_std * E(tau_sq).
-
-    a : float, optional (default=2)
-        The cluster variances have a InvGamma(a/2, b/2) prior.
-        This is the shape parameter a.
-
-    b : float or str, optional (default='auto')
-        The cluster variances have a InvGamma(a/2, b/2) prior.
-        This is the scale parameter b.
-
-    lambda_prior : float, optional (default=0.9)
-        This value must be between 0 and 1. The blending coefficient has a
-        normal(lambda_prior, lambda_variance_prior) prior truncated to
-        the range (0, 1). This is the prior mean. Larger values result in the
-        dynamics of the nodes being more influenced by their assigned clusters.
-
-    lambda_variance_prior : float, optional (default=0.01)
-        The blending coefficient has a
-        normal(lambda_prior, lambda_variance_prior) prior truncated to
-        the range (0, 1). This is the prior variance. Larger values result in
-        the dynamics of the nodes being more influenced by their assigned
-        clusters.
-
-    sigma_prior_std : float, optional (default=4.0)
-        The standard deviation of the prior on the cluster shapes. Used
-        to select reasonable priors.
-
-    mean_variance_prior_std : float, optional (default='auto')
-        The standard deviation for the prior on tau_sq. Used to automatically
-        select reasonable priors.
-
-    step_size_X : float or str, optional (default='auto')
-        Initial step size of the random-walk metropolis sampler for the latent
-        postilions.
-
-    step_size_intercept : float, optional (default=0.1)
-        Initial step size for the random-walk metropolis sampler for the
-        intercepts.
-
-    step_size_radii : float, optional (default=175000)
-        Initial step size for the metropolis-hastings sampler with a
-        Dirichlet(step_size_radii * radii) proposal used to sample the radii
-        parameters in the case of directed networks. Larger values correspond
-        to smaller step sizes.
-
-    n_control : int or None, optional (default=None)
-        Number of nodes to sample when using the case-control likelihood. This
-        is still experimental. Allows the algorithm to scale linearly instead
-        of quadratically. If None then the case-control likelihood is not used.
-        Only implemented for directed networks.
-
-    n_resample_control : int, optional (default=1000)
-        The number of iterations to wait before re-sampling the control nodes
-        when the case-control likelihood is utilized.
-
-    copy : bool, optional (default=True)
-        Whether to copy the dynamic network when manipulating the network
-        internally.
-
-    random_state : int, RandomState instance or None, optional (default=None)
-        If int, random_state is the seed used by the random number generator;
-        If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by `np.random`.
-
-    Attributes
-    ----------
-    X_ : array-like, shape (n_time_steps, n_nodes, n_features)
-        The latent position of each node at every time-step.
-
-    intercept_ : array-like, shape (1,) or (2,)
-        The intercept of the model. If `is_directed` is False a single intercept
-        is estimated. Otherwise, two intercepts are estimated for incoming and
-        outgoing connections, respectively.
-
-    radii_ : array-like, shape (n_nodes,)
-        The social radius of each node. Only available if `is_directed`=True.
-
-    z_ : array-like, shape (n_time_steps, n_nodes)
-        The cluster assignments of each node for every time-step.
-
-    mu_ : array-like, shape (n_components, n_features)
-        The mean of each mixture component.
-
-    sigma_ : array-like, shape (n_components,)
-        The variance of each mixture component.
-
-    lambda_ : float
-        The estimated blending coefficient.
-
-    init_weight_ : array-like, shape (n_components,)
-        The initial distribution over mixture components.
-
-    trans_weights_ : array-like,
-                     shape (n_time_steps, n_components, n_components)
-        The transition probabilities between mixture components at
-        each time-step.
-
-    beta_ : array-like, shape (n_components,)
-        Inferred expected transition probabilities, i.e., the transition
-        probabilities are drawn from a DP(alpha * beta) distribution.
-
-    coocurrence_probabilities_ : array-like,
-                                 shape (n_time_steps, n_nodes, n_nodes)
-        The posterior cooccurrence probabilities at each time step. This
-        is the probability that node i and node j are in the same community
-        at time t.
-
-    Xs_ :  array-like, shape (n_iter, n_time_steps, n_nodes, n_features)
-        Posterior samples of the latent positions.
-
-    intercepts_ : array-like, shape (n_iter, 1) or (n_iter, 2)
-        Posterior samples of the intercept parameter.
-
-    radiis_ : array-like, shape (n_iter, n_nodes)
-        Posterior samples of each node's social radius.
-
-    lambdas_ : array-like, shape (n_iter,)
-        Posterior samples of the blending coefficient.
-
-    Examples
-    --------
-
-    >>> from dynetlsm import DynamicNetworkHDPLPCM
-    >>> from dynetlsm.datasets import load_monks
-    >>> Y, _, _ = load_monks(is_directed=False)
-    >>> Y.shape
-    (3, 18, 18)
-    >>> model = DynamicNetworkHDPLPCM(n_iter=250, burn=250, tune=250,
-    ...                               n_features=2, n_components=10).fit(Y)
-    >>> model.X_.shape
-    (3, 18, 2)
-
-    References
-    ----------
-    [1] Loyal, Joshua D., and Chen, Yuguo (2020). "A Bayesian nonparametric
-        latent space approach to modeling evolving communities in dynamic
-        networks", arXiv:2003.07404.
-    [2] Hoff, P.D., Raftery, A. E., and Handcock, M.S. (2002). "Latent
-        space approaches to social network analysis". Journal of the
-        American Statistical Association, 97(460):1090-1098.
-    """
+class DynamicNetworkLPCM(object):
     def __init__(self,
                  n_features=2,
-                 n_components=10,
+                 n_components=5,
                  is_directed=False,
-                 selection_type='vi',
+                 selection_type='map',
                  n_iter=5000,
                  tune=2500,
                  tune_interval=100,
                  burn=2500,
                  thin=None,
-                 gamma=1.0,
-                 gamma_prior_shape=1.0,
-                 gamma_prior_rate=0.1,
-                 alpha_init=1.0,
-                 alpha_init_shape=1.,
-                 alpha_init_rate=1.,
-                 alpha=1.0,
-                 kappa=4.0,
-                 alpha_kappa_shape=5,
-                 alpha_kappa_rate=0.1,
                  intercept_prior='auto',
                  intercept_variance_prior=2,
                  mean_variance_prior='auto',
@@ -409,6 +149,7 @@ class DynamicNetworkHDPLPCM(object):
                  b='auto',
                  lambda_prior=0.9,
                  lambda_variance_prior=0.01,
+                 dirichlet_prior='uniform',
                  sigma_prior_std=4.0,
                  mean_variance_prior_std=4.0,
                  step_size_X='auto',
@@ -420,8 +161,10 @@ class DynamicNetworkHDPLPCM(object):
                  random_state=None):
         self.n_iter = n_iter
         self.is_directed = is_directed
+        self.selection_type = selection_type
         self.n_features = n_features
         self.n_components = n_components
+        self.dirichlet_prior = dirichlet_prior
         self.step_size_X = step_size_X
         self.intercept_prior = intercept_prior
         self.intercept_variance_prior = intercept_variance_prior
@@ -429,16 +172,6 @@ class DynamicNetworkHDPLPCM(object):
         self.mean_variance_prior = mean_variance_prior
         self.a = a
         self.b = b
-        self.alpha_init = alpha_init
-        self.alpha = alpha
-        self.alpha_init_shape = alpha_init_shape
-        self.alpha_init_rate = alpha_init_rate
-        self.gamma = gamma
-        self.gamma_prior_shape = gamma_prior_shape
-        self.gamma_prior_rate = gamma_prior_rate
-        self.kappa = kappa
-        self.alpha_kappa_shape = alpha_kappa_shape
-        self.alpha_kappa_rate = alpha_kappa_rate
         self.lambda_prior = lambda_prior
         self.lambda_variance_prior = lambda_variance_prior
         self.mean_variance_prior_std = mean_variance_prior_std
@@ -448,7 +181,6 @@ class DynamicNetworkHDPLPCM(object):
         self.tune_interval = tune_interval
         self.burn = burn
         self.thin = thin
-        self.selection_type = selection_type
         self.n_control = n_control
         self.n_resample_control = n_resample_control
         self.copy = copy
@@ -498,10 +230,10 @@ class DynamicNetworkHDPLPCM(object):
     def forecast_probas_map_(self):
         """Simple plug-in estimate of one-step-ahead probabilities based on
         the MAP estimate."""
-        ws = self.trans_weights_[-1][self.z_[-1]]
+        ws = self.trans_weight_[self.z_[-1]]
 
         X_ahead = np.zeros((self.Y_fit_.shape[1], self.n_features))
-        for g in np.unique(self.z_[-1]):
+        for g in range(self.n_components):
             X_ahead += ws[:, g].reshape(-1, 1) * (self.lambda_ * self.mu_[g] +
                 (1 - self.lambda_) * self.X_[-1])
 
@@ -515,11 +247,10 @@ class DynamicNetworkHDPLPCM(object):
         sample_ids = np.arange(self.n_burn_, n_samples)
         X_hat = np.zeros((n_nodes, self.n_features))
         for i, idx in enumerate(sample_ids):
-            z, _, _, trans_w, mu, sigma = renormalize_weights(
-                self, sample_id=idx)
-
-            ws = trans_w[-1][z[-1]]
-            for g in np.unique(z[-1]):
+            z = self.zs_[idx, -1]
+            mu = self.mus_[idx]
+            ws = self.trans_weights_[-1][z]
+            for g in range(self.n_components):
                 X_hat += (1. / sample_ids.shape[0]) * ws[:, g].reshape(-1, 1) * (
                     self.lambdas_[idx] * mu[g] +
                     (1 - self.lambdas_[idx]) * self.Xs_[idx, -1])
@@ -534,11 +265,10 @@ class DynamicNetworkHDPLPCM(object):
         sample_ids = np.arange(self.n_burn_, n_samples)
         X_hat = np.zeros((n_nodes, self.n_features))
         for i, idx in enumerate(sample_ids):
-            z, _, _, trans_w, mu, sigma = renormalize_weights(
-                self, sample_id=idx)
-
-            ws = trans_w[-1][z[-1]]
-            for g in np.unique(z[-1]):
+            z = self.zs_[idx, -1]
+            mu = self.mus_[idx]
+            ws = self.trans_weights_[-1][z]
+            for g in range(self.n_components):
                 X_hat += (1. / sample_ids.shape[0]) * ws[:, g].reshape(-1, 1) * (
                     self.lambdas_[idx] * mu[g] +
                     (1 - self.lambdas_[idx]) * self.Xs_[idx, -1])
@@ -547,17 +277,17 @@ class DynamicNetworkHDPLPCM(object):
         return marginal_forecast(
             X_hat, self.Xs_[n_burn:, -1],
             np.ascontiguousarray(self.zs_[n_burn:, -1]),
-            np.ascontiguousarray(self.weights_[n_burn:, -1]),
+            np.ascontiguousarray(self.trans_weights_[n_burn:]),
             np.ascontiguousarray(self.mus_[n_burn:]),
             self.sigmas_[n_burn:], self.intercepts_[n_burn:].ravel(),
-            self.lambdas_[n_burn:].ravel(), renormalize=True)
+            self.lambdas_[n_burn:].ravel(), renormalize=False)
 
     def forecast_probas(self, n_samples=5000):
         rng = check_random_state(self.random_state)
         n_nodes = self.X_.shape[1]
         n_groups = self.mu_.shape[0]
 
-        wt = self.trans_weights_[-1]
+        wt = self.trans_weight_
         zt = np.zeros(n_nodes, dtype=np.int)
         Xt = np.zeros((n_nodes, self.n_features), dtype=np.float64)
         probas = np.zeros((n_nodes, n_nodes))
@@ -587,53 +317,11 @@ class DynamicNetworkHDPLPCM(object):
         return probas
 
     @property
-    def forecast_probas_pp_(self):
-        rng = check_random_state(self.random_state)
-        n_time_steps, n_nodes, _ = self.Y_fit_.shape
-        n_samples = self.zs_.shape[0]
-        sample_ids = np.arange(self.n_burn_, n_samples)
-        n_samples = sample_ids.shape[0]
-
-        probas = np.zeros((n_nodes, n_nodes))
-        Xt = np.zeros((n_nodes, self.n_features))
-        zt = np.zeros(n_nodes)
-        for i, idx in enumerate(sample_ids):
-            z, _, _, trans_w, mu, sigma = renormalize_weights(
-                self, sample_id=idx)
-            wt = trans_w[-1][z[-1]]
-            n_groups = mu.shape[0]
-
-            # sample labels
-            zt[:] = 0
-            for g in range(n_groups):
-                group_mask = z[-1] == g
-                ng = np.sum(group_mask)
-                zt[group_mask] = rng.choice(
-                    np.arange(n_groups), p=wt[g, :], size=ng)
-
-            # sample latent positions
-            Xt[:] = 0
-            for g in range(n_groups):
-                group_mask = zt == g
-                ng = np.sum(group_mask)
-                Xt[group_mask, :] = (
-                    sigma[g] * rng.randn(ng, 2) + (
-                        self.lambdas_[idx] * mu[g] +
-                            (1 - self.lambdas_[idx]) * self.Xs_[idx, -1][group_mask, :])
-                )
-
-            # calculate one-step ahead probabilities
-            probas += (
-                expit(self.intercepts_[idx] - calculate_distances(Xt)) / n_samples)
-
-        return probas
-
-    @property
     def auc_(self):
         """In-sample AUC of the final estimated model."""
+        # FIXME: This should mask nan values
         if not hasattr(self, 'X_'):
             raise ValueError('Model not fit.')
-
         return network_auc(self.Y_fit_, self.probas_,
                            is_directed=self.is_directed,
                            nan_mask=self.nan_mask_)
@@ -687,19 +375,22 @@ class DynamicNetworkHDPLPCM(object):
             self.n_iter += self.tune
 
         (self.Xs_, self.intercepts_, self.mus_, self.sigmas_, self.zs_,
-         self.betas_, self.weights_, self.lambdas_,
+         self.init_weights_, self.trans_weights_, self.lambdas_,
          self.radiis_, self.Y_fit_) = init_sampler(
                          Y, is_directed=self.is_directed,
                          n_iter=self.n_iter,
                          n_features=self.n_features,
                          n_components=self.n_components,
                          lambda_init=self.lambda_prior,
-                         gamma=self.gamma,
-                         alpha=self.alpha,
                          sample_missing=sample_missing,
                          n_control=self.n_control,
                          n_resample_control=self.n_resample_control,
                          random_state=rng)
+
+        if self.dirichlet_prior == 'uniform':
+            self.dirichlet_prior_ = 1.
+        else:
+            self.dirichlet_prior_ = 1. / self.n_components
 
         # store missing value imputation counts
         if sample_missing:
@@ -774,7 +465,7 @@ class DynamicNetworkHDPLPCM(object):
 
         # NOTE: This sets the scale of the cluster sizes. Default is to assume
         # there is no cluster structure.
-        # b ~ Gamma(c/2, 2/d) hyper-prior chosen so that
+        # b ~ Gamma(c/2, d/2) hyper-prior chossen so that
         #
         # E(b) = b
         # sqrt(Var(b)) = sigma_prior_std * E(b)
@@ -798,13 +489,13 @@ class DynamicNetworkHDPLPCM(object):
             self.logps_[0] = self.logp(
                 self.Xs_[0], self.intercepts_[0],
                 self.mus_[0], self.sigmas_[0], self.zs_[0],
-                self.weights_[0], self.betas_[0],
+                self.init_weights_[0], self.trans_weights_[0],
                 self.lambdas_[0], radii=self.radiis_[0])
         else:
             self.logps_[0] = self.logp(
                 self.Xs_[0], self.intercepts_[0],
                 self.mus_[0], self.sigmas_[0], self.zs_[0],
-                self.weights_[0], self.betas_[0],
+                self.init_weights_[0], self.trans_weights_[0],
                 self.lambdas_[0])
         self.logp_ = self.logps_[0]
 
@@ -827,8 +518,8 @@ class DynamicNetworkHDPLPCM(object):
             z = self.zs_[it - 1].copy()
             mu = self.mus_[it - 1].copy()
             sigma = self.sigmas_[it - 1].copy()
-            weights = self.weights_[it - 1].copy()
-            beta = self.betas_[it - 1].copy()
+            init_weights = self.init_weights_[it - 1].copy()
+            trans_weights = self.trans_weights_[it - 1].copy()
             lmbda = self.lambdas_[it - 1].copy()
             radii = self.radiis_[it - 1].copy() if self.is_directed else None
 
@@ -874,28 +565,18 @@ class DynamicNetworkHDPLPCM(object):
                             squared=False, random_state=rng)
 
             # block sample labels
-            z, n, nk, resp = sample_labels_block(X, mu, sigma, lmbda, weights,
-                                                 random_state=rng)
-
-            # sample auxiliary variables
-            m = sample_tables(n, beta, self.alpha_init, self.alpha, self.kappa,
-                              random_state=rng)
-            m_bar, w = sample_mbar(m, beta, kappa=self.kappa, alpha=self.alpha,
-                                   random_state=rng)
-
-            # sample global transition distribution (beta)
-            beta = rng.dirichlet((self.gamma / self.n_components) + m_bar)
+            z, n, nk, resp = sample_labels_block_lpcm(
+                X, mu, sigma, lmbda, init_weights, trans_weights,
+                random_state=rng)
 
             # sample initial distribution (w0)
-            weights[0, 0] = sample_dirichlet(self.alpha_init * beta + nk[0],
-                                             random_state=rng)
+            init_weights = sample_dirichlet(
+                 self.dirichlet_prior_ + nk[0], random_state=rng)
 
             # sample transition distributions (w)
-            probas = self.alpha * beta + self.kappa * np.eye(self.n_components)
-            for t in range(1, n_time_steps):
-                for k in range(self.n_components):
-                    weights[t, k] = sample_dirichlet(probas[k] + n[t, k],
-                                                     random_state=rng)
+            for k in range(self.n_components):
+                trans_weights[k] = sample_dirichlet(
+                     self.dirichlet_prior_ + n[1:, k].sum(axis=0), random_state=rng)
 
             # sample cluster means
             for k in range(self.n_components):
@@ -971,57 +652,6 @@ class DynamicNetworkHDPLPCM(object):
                 shape = 0.5 * (self.c0_ + self.n_components * self.a)
                 self.b_ = rng.gamma(shape=shape, scale=1. / scale)
 
-            # hyper-parameter samplers
-
-            # sample gamma
-            self.gamma = sample_concentration_param(
-                            self.gamma,
-                            n_clusters=np.sum(m_bar > 0),
-                            n_samples=np.sum(m_bar),
-                            prior_shape=self.gamma_prior_shape,
-                            prior_rate=self.gamma_prior_rate,
-                            random_state=rng)
-
-            # sample concentration parameter of the initial distribution
-            # auxillary sampler of Escobar and West (1995)
-            # with k = m_{00.}
-            # NOTE: a single group in the HDP results in the the same
-            #       auxillary sampler as in the DP case.
-            self.alpha_init = sample_concentration_param(
-                                self.alpha_init,
-                                n_clusters=np.sum(m[0, 0]),
-                                n_samples=n_nodes,
-                                prior_shape=self.alpha_init_shape,
-                                prior_rate=self.alpha_init_rate,
-                                random_state=rng)
-
-            # sample alpha + kappa
-            alpha_kappa = self.alpha + self.kappa
-
-            n_dot = np.sum(n[1:], axis=2)
-            valid_indices = n_dot > 0
-            valid_n_dot = n_dot[valid_indices]
-            s = rng.binomial(
-                    1, p=(valid_n_dot / (valid_n_dot + alpha_kappa)))
-            r = rng.beta(alpha_kappa + 1, valid_n_dot)
-
-            shape = (self.alpha_kappa_shape +
-                     np.sum(m[1:], axis=2)[valid_indices].sum() -
-                     np.sum(s))
-            rate = self.alpha_kappa_rate - np.sum(np.log(r))
-            alpha_kappa = rng.gamma(shape=shape, scale=1. / rate)
-
-            # sample rho
-            # prior mean ~ 0.8, highly skewed to a high stickiness
-            # NOTE: other option was 10, 1
-            rho_a, rho_b = 8, 2
-            n_success = np.sum(w)
-            rho = rng.beta(a=rho_a + n_success,
-                           b=np.sum(m[1:]) - n_success + rho_b)
-
-            self.kappa = alpha_kappa * rho
-            self.alpha = alpha_kappa - self.kappa
-
             # sample missing data
             if sample_missing:
                 # calculate pij for missing edges and sample from Bern(pij)
@@ -1054,19 +684,21 @@ class DynamicNetworkHDPLPCM(object):
             self.mus_[it] = mu
             self.sigmas_[it] = sigma
             self.zs_[it] = z
-            self.betas_[it] = beta
-            self.weights_[it] = weights
+            self.init_weights_[it] = init_weights
+            self.trans_weights_[it] = trans_weights
             self.lambdas_[it] = lmbda
             if self.is_directed:
                 self.radiis_[it] = radii
 
-            # set current MAP
+            # calculat log-joint
             if self.is_directed:
-                self.logps_[it] = self.logp(X, intercept, mu, sigma, z, weights,
-                                            beta, lmbda, radii=radii, dist=dist)
+                self.logps_[it] = self.logp(
+                    X, intercept, mu, sigma, z, init_weights, trans_weights,
+                    lmbda, radii=radii, dist=dist)
             else:
-                self.logps_[it] = self.logp(X, intercept, mu, sigma, z, weights,
-                                            beta, lmbda, dist=dist)
+                self.logps_[it] = self.logp(
+                    X, intercept, mu, sigma, z, init_weights, trans_weights,
+                    lmbda, dist=dist)
 
         # apply thinning if necessary
         if self.thin is not None:
@@ -1075,8 +707,8 @@ class DynamicNetworkHDPLPCM(object):
             self.mus_ = self.mus_[::self.thin]
             self.sigmas_ = self.sigmas_[::self.thin]
             self.zs_ = self.zs_[::self.thin]
-            self.betas_ = self.betas_[::self.thin]
-            self.weights_ = self.weights_[::self.thin]
+            self.init_weights_ = self.init_weights_[::self.thin]
+            self.trans_weights_ = self.trans_weights_[::self.thin]
             self.lambdas_ = self.lambdas_[::self.thin]
             self.logps_ = self.logps_[::self.thin]
             if self.is_directed:
@@ -1085,57 +717,27 @@ class DynamicNetworkHDPLPCM(object):
         # perform model selection
         n_burn = self.n_burn_
 
-        # store statistics for BIC or MAP model selection
-        self.bic_, self.models_, self.counts_ = select_bic(self)
-
         # calculate coocurrence probabilities
         self._calculate_posterior_cooccurrences()
 
-        # perform model selection
-        if self.selection_type == 'vi':
-            best_id = minimize_posterior_expected_vi(self)
-            self.logp_ = self.logps_[best_id]
-            self.X_ = self.Xs_[best_id]
-            self.intercept_ = self.intercepts_[best_id]
-            self.lambda_ = self.lambdas_[best_id]
-            if self.is_directed:
-                self.radii_ = self.radiis_[best_id]
-
-            z, beta, init_w, trans_w, mu, sigma = renormalize_weights(
-                self, sample_id=best_id)
-            self.z_ = z
-            self.beta_ = beta
-            self.init_weights_ = init_w
-            self.trans_weights_ = trans_w
-            self.mu_ = mu
-            self.sigma_ = sigma
-            self.selected_id_ = best_id
+        # Store posterior mode estimates
+        if self.selection_type == 'map':
+            best_id = np.argmax(self.logps_[n_burn:])
         else:
-            if self.selection_type == 'bic':
-                model_id = np.argmin(self.bic_[:, 1])
-                self.best_k_ = int(self.bic_[model_id, 0])
-            elif self.selection_type == 'map':
-                self.best_k_ = np.argmax(np.bincount(self.counts_))
-                model_id = np.argwhere(self.bic_[:, 0] == self.best_k_)[0, 0]
-            else:
-                raise ValueError('Selection type not recognized')
+            best_id = minimize_posterior_expected_vi(self)
 
-            self.logp_ = self.logps_[int(self.bic_[model_id, 3])]
-            self.X_ = self.models_[model_id].X
-            self.intercept_ = self.models_[model_id].intercept
-            self.mu_ = self.models_[model_id].mu
-            self.sigma_ = self.models_[model_id].sigma
-            if self.is_directed:
-                self.radii_ = self.models_[model_id].radii
-
-            # return_inverse relabels to start at zero
-            _, temp_z = np.unique(self.models_[model_id].z.ravel(),
-                                  return_inverse=True)
-            self.z_ = temp_z.reshape(n_time_steps, n_nodes)
-            self.beta_ = self.models_[model_id].beta
-            self.init_weights_ = self.models_[model_id].init_weights
-            self.trans_weights_ = self.models_[model_id].trans_weights
-            self.lambda_ = self.models_[model_id].lmbda
+        self.logp_ = self.logps_[best_id]
+        self.X_ = self.Xs_[best_id]
+        self.intercept_ = self.intercepts_[best_id]
+        self.lambda_ = self.lambdas_[best_id]
+        if self.is_directed:
+            self.radii_ = self.radiis_[best_id]
+        self.z_ = self.zs_[best_id]
+        self.init_weight_ = self.init_weights_[best_id]
+        self.trans_weight_ = self.trans_weights_[best_id]
+        self.mu_ = self.mus_[best_id]
+        self.sigma_ = self.sigmas_[best_id]
+        self.selected_id_ = best_id
 
         # Procrustes: rotate to reference position (best model)
         for idx in range(self.Xs_.shape[0]):
@@ -1155,26 +757,6 @@ class DynamicNetworkHDPLPCM(object):
         if sample_missing:
             self.missings_ /= (self.n_iter - self.n_burn_)
 
-        # store posterior group count probabilities
-        self.posterior_group_ids_, self.posterior_group_counts_ = [], []
-        for t in range(n_time_steps):
-            index, counts = calculate_posterior_group_counts(self, t=t)
-            self.posterior_group_ids_.append(index)
-            self.posterior_group_counts_.append(counts)
-
-        # store Gweke's diagnostic
-        self.logp_geweke_ = geweke_diag(self.logps_, n_burn=n_burn)
-        self.lambda_geweke_ = geweke_diag(self.lambdas_[:, 0], n_burn=n_burn)
-
-        if self.is_directed:
-            self.intercept_in_geweke_ = geweke_diag(
-                self.intercepts_[:, 0], n_burn=n_burn)
-            self.intercept_out_geweke_ = geweke_diag(
-                self.intercepts_[:, 1], n_burn=n_burn)
-        else:
-            self.intercept_geweke_ = geweke_diag(
-                self.intercepts_[:, 0], n_burn=n_burn)
-
         return self
 
     def _calculate_posterior_cooccurrences(self):
@@ -1185,30 +767,24 @@ class DynamicNetworkHDPLPCM(object):
             self.cooccurrence_probas_[t] = calculate_posterior_cooccurrence(
                 self, t=t)
 
-    def logp(self, X, intercept, mu, sigma, z, weights, beta, lmbda, radii=None,
-             dist=None):
+    def logp(self, X, intercept, mu, sigma, z, init_weights, trans_weights,
+             lmbda, radii=None, dist=None):
         n_time_steps, n_nodes, _ = X.shape
 
-        # beta log-likelihood
-        loglik = dirichlet_logpdf(beta,
-                                  np.repeat(self.gamma / self.n_components,
-                                            self.n_components))
-
         # initial distribution (w0) log-likelihood
-        loglik += dirichlet_logpdf(weights[0, 0], self.alpha_init * beta)
+        loglik = dirichlet_logpdf(
+            init_weights, self.dirichlet_prior_ * np.ones(self.n_components))
 
         # transition probabilities (w) log-likelihood
-        deltas = self.kappa * np.eye(self.n_components)
-        for t in range(1, n_time_steps):
-            for k in range(self.n_components):
-                loglik += dirichlet_logpdf(weights[t, k],
-                                           self.alpha * beta + deltas[k])
+        for k in range(self.n_components):
+            loglik += dirichlet_logpdf(
+                trans_weights[k], self.dirichlet_prior_ * np.ones(self.n_components))
 
         # log-likelihood of each node's label markov chain
         for i in range(n_nodes):
-            loglik += np.log(weights[0, 0, z[0, i]])
+            loglik += np.log(init_weights[z[0, i]])
             for t in range(1, n_time_steps):
-                loglik += np.log(weights[t, z[t-1, i], z[t, i]])
+                loglik += np.log(trans_weights[z[t-1, i], z[t, i]])
 
         # network log-likelihood
         if self.is_directed:
@@ -1279,39 +855,6 @@ class DynamicNetworkHDPLPCM(object):
 
         return loglik
 
-    def set_best_model(self, selection_type='bic'):
-        n_time_steps, n_nodes, _ = self.Y_fit_.shape
-
-        self.selection_type = selection_type
-
-        if selection_type == 'bic':
-            model_id = np.argmin(self.bic_[:, 1])
-            self.best_k_ = int(self.bic_[model_id, 0])
-        elif self.selection_type == 'map':
-            self.best_k_ = np.argmax(np.bincount(self.counts_))
-            model_id = np.argwhere(self.bic_[:, 0] == self.best_k_)[0, 0]
-        else:
-            raise ValueError('Selection type not recognized')
-
-        self.logp_ = self.logps_[int(self.bic_[model_id, 3])]
-        self.X_ = self.models_[model_id].X
-        self.intercept_ = self.models_[model_id].intercept
-        self.mu_ = self.models_[model_id].mu
-        self.sigma_ = self.models_[model_id].sigma
-        if self.is_directed:
-            self.radii_ = self.models_[model_id].radii
-
-        # return_inverse relabels to start at zero
-        _, temp_z = np.unique(self.models_[model_id].z.ravel(),
-                              return_inverse=True)
-        self.z_ = temp_z.reshape(n_time_steps, n_nodes)
-        self.beta_ = self.models_[model_id].beta
-        self.init_weights_ = self.models_[model_id].init_weights
-        self.trans_weights_ = self.models_[model_id].trans_weights
-        self.lambda_ = self.models_[model_id].lmbda
-
-        return self
-
     def delete_traces(self):
         """Delete stored traces. Useful for storage, since the traces
         can take up a lot of space on disk.
@@ -1321,8 +864,8 @@ class DynamicNetworkHDPLPCM(object):
         del self.zs_
         del self.mus_
         del self.sigmas_
-        del self.weights_
-        del self.betas_
+        del self.init_weights_
+        del self.trans_weights_
         del self.lambdas_
         del self.logps_
 

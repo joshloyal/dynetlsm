@@ -47,7 +47,7 @@ def benchmark_single(n_iter=10000, burn=5000, tune=1000,
     random_state = check_random_state(random_state)
 
     # generate simulated networks
-    Y, X, z, intercept = synthetic_static_community_dynamic_network(
+    Y, X, z, intercept, _, _ = synthetic_static_community_dynamic_network(
         n_time_steps=6, n_nodes=120, random_state=random_state)
 
     # fit HDP-LPCM

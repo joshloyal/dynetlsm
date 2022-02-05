@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.linalg as linalg
+from scipy.linalg import orthogonal_procrustes
 
 
 def flatten_array(X):
@@ -18,8 +19,10 @@ def compute_procrustes_rotation(X, Y):
 
 def static_procrustes_rotation(X, Y):
     """Rotate Y to match X"""
-    A = compute_procrustes_rotation(X, Y)
-    return np.dot(Y - np.mean(Y, axis=0), A)
+    #A = compute_procrustes_rotation(X, Y)
+    #return np.dot(Y - np.mean(Y, axis=0), A)
+    R, _ = orthogonal_procrustes(Y, X)
+    return np.dot(Y, R), R
 
 
 def longitudinal_procrustes_rotation(X_ref, X):
@@ -28,8 +31,8 @@ def longitudinal_procrustes_rotation(X_ref, X):
 
     X_ref = flatten_array(X_ref)
     X = flatten_array(X)
-    X = static_procrustes_rotation(X_ref, X)
-    return X.reshape(n_time_steps, n_nodes, -1)
+    X, R = static_procrustes_rotation(X_ref, X)
+    return X.reshape(n_time_steps, n_nodes, -1), R
 
 
 def longitudinal_procrustes_transform(X, means, copy=True):

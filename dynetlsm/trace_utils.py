@@ -70,7 +70,7 @@ def spectrum0_ar(x, max_order='auto'):
     # calculate f(0) and AIC for each AR(p) model
     results = np.zeros((max_order, 3))
     for p in range(1, max_order + 1):
-        coefs, sigma = yule_walker(x, order=p, demean=True, method='unbiased')
+        coefs, sigma = yule_walker(x, order=p, demean=True, method='adjusted')
         results[p-1] = [p, spec0_ar(sigma, coefs), aic_ar(sigma, n_samples, p)]
 
     # return result for model minimizing the AIC

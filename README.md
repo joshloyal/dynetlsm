@@ -245,7 +245,7 @@ From this diagram, one can see that group 1 primarily splits off into group 3, w
 
 Simulation Studies and Real-Data Applications
 ---------------------------------------------
-This package includes the simulation studies and real-data applications found in Loyal and Chen (2021)<sup>[[6]](#References)</sup>:
+This package includes the simulation studies and real-data applications found in Loyal and Chen (2021):
 
 * A synthetic dynamic network with a time-homogeneous community structure (HDP-LPCM + LPCM): ([here](/examples/homogeneous_simulation.py)).
 * A synthetic dynamic network with a time-homogeneous community structure (SBM): ([here](/examples/homogeneous_sbm.R)).
@@ -272,6 +272,3 @@ References
 [4]: Handcock, M. S., Raftery, A. E., and Tantrum, J. M. (2007). Model-based clustering of social networks. *Journal of the Royal Statistical Society A*, 170(2):301-354.
 
 [5]: Sewell, D. K. and Chen, Y. (2017). Latent space approaches to community detection in dynamic networks. *Bayesian Analysis*, 12(2):351-377.
-
-[6]: Loyal, J. D. and Chen, Y. (2020). A Bayesian nonparametric latent space approach to modeling evolving communities in dynamic networks. arXiv preprint arXiv:2003.07404.
-

@@ -263,6 +263,8 @@ This package includes the simulation studies and real-data applications found in
 * A synthetic dynamic network with a time-homogeneous community structure (DynSBM): ([here](/examples/homogeneous_dynsbm.R)).
 * A synthetic dynamic network with a time-inhomogeneous community structure (HDP-LPCM): ([here](/examples/inhomogeneous_simulation.py)).
 * A synthetic dynamic network with a time-inhomogeneous community structure (SBM): ([here](/examples/inhomogeneous_sbm.R)).
+* Quantify the HDP-LPCM's sensitivity to group seperation and stability: ([here](/examples/detection_limit.py)).
+* A synthetic dynamic network with a slowly merging group structure: ([here](/examples/slowly_merging.py))
 * Sampson's monastery network: ([here](/examples/sampson_monks.py)).
 * A dynamic network constructed from international military alliances during the first three decades of the Cold War (1950 - 1979): ([here](/examples/military_alliances.py)).
 * A dynamic network constructed from character interactions in the first four seasons of the Game of Thrones television series: ([here](/examples/GoT.py)).

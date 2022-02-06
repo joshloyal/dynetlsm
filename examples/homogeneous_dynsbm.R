@@ -8,10 +8,10 @@ use_python("~/.virtualenv/stat/bin/python", required = T)
 dynetlsm <- import("dynetlsm")
 sklearn <- import("sklearn")
 
-#args <- commandArgs(trailingOnly = TRUE)
-#seed <- as.integer(args[[1]])
 
-sim_type <- 'easy'
+# choose between easy and hard
+sim_type <- 'hard'
+# sim_type <- 'easy'
 out_dir <- paste0('results_dynsbm_', sim_type)
 if (!dir.exists(out_dir)) {
     dir.create(out_dir)
@@ -29,7 +29,7 @@ compute.icl <- function(dynsbm){
 
 for (seed in 0:49) {
     print(seed)
-    res <- dynetlsm$datasets$synthetic_static_community_dynamic_network(
+    res <- dynetlsm$datasets$homogeneous_simulation(
         n_time_steps=6L, n_nodes=120L, random_state=as.integer(seed),
         simulation_type = sim_type)
     Y <- res[[1]]

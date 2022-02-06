@@ -25,6 +25,26 @@ from dynetlsm.metrics import variation_of_information, out_of_sample_auc
 from dynetlsm.network_statistics import density, modularity
 
 
+# NOTE: This is meant to be run in parallel on a computer cluster
+n_reps = 50
+out_dir = 'results'
+
+# Choose between hdp_lpcm and lpcm
+model_type = 'hdp_lpcm'
+# model_type = 'lpcm'
+
+# Set to true for sensitivity analysis
+sample_hyperparameters = False
+
+# Choose between vi and map
+selection_type = 'vi'
+# selection_type = 'map'
+
+# choose between easy and hard
+sim_type = 'hard'
+#sim_type = 'easy'
+
+
 def counts_per_time_step(z):
     n_time_steps = z.shape[0]
     group_counts = np.zeros(n_time_steps, dtype=np.int)
@@ -49,6 +69,7 @@ def benchmark_single(n_iter=10000, burn=5000, tune=1000,
                      model_type='hdp_lpcm',
                      selection_type='map',
                      sim_type='hard',
+                     sample_hyperparameters=False,
                      random_state=None):
     random_state = check_random_state(random_state)
 
@@ -63,14 +84,34 @@ def benchmark_single(n_iter=10000, burn=5000, tune=1000,
 
     # fit HDP-LPCM
     if model_type == 'hdp_lpcm':
-        model = DynamicNetworkHDPLPCM(n_iter=n_iter,
-                                      burn=burn,
-                                      tune=tune,
-                                      tune_interval=1000,
-                                      is_directed=False,
-                                      selection_type='vi',
-                                      n_components=10,
-                                      random_state=random_state).fit(Y_obs)
+        if sample_hyperparameters:
+            lambda_prior = random_state.uniform(low=0.5)
+            alpha_kappa_rate = random_state.uniform(low=0.001, high=1)
+            gamma_prior_rate = random_state.uniform(low=0.001, high=1)
+            alpha_init_rate = random_state.uniform(low=0.001, high=1)
+            model = DynamicNetworkHDPLPCM(n_iter=n_iter,
+                                          burn=burn,
+                                          tune=tune,
+                                          tune_interval=1000,
+                                          is_directed=False,
+                                          selection_type='vi',
+                                          lambda_prior=lambda_prior,
+                                          lambda_variance_prior=1,
+                                          alpha_kappa_shape=1,
+                                          alpha_kappa_rate=alpha_kappa_rate,
+                                          gamma_prior_rate=gamma_prior_rate,
+                                          alpha_init_rate=alpha_init_rate,
+                                          n_components=10,
+                                          random_state=random_state).fit(Y_obs)
+        else:
+            model = DynamicNetworkHDPLPCM(n_iter=n_iter,
+                                          burn=burn,
+                                          tune=tune,
+                                          tune_interval=1000,
+                                          is_directed=False,
+                                          selection_type='vi',
+                                          n_components=10,
+                                          random_state=random_state).fit(Y_obs)
     else:
         model = DynamicNetworkLPCM(n_iter=n_iter,
                                    burn=burn,
@@ -130,13 +171,6 @@ def benchmark_single(n_iter=10000, burn=5000, tune=1000,
     results.to_csv(outfile_name, index=False)
 
 
-# NOTE: This is meant to be run in parallel on a computer cluster
-n_reps = 50
-out_dir = 'results'
-model_type = 'hdp_lpcm'
-selection_type = 'vi'
-sim_type = 'easy'
-
 # create a directory to store the results
 if not os.path.exists('results'):
     os.mkdir(out_dir)
@@ -145,7 +179,7 @@ for i in range(n_reps):
     benchmark_single(
         n_iter=35000, burn=10000, tune=5000, random_state=i,
         model_type=model_type, selection_type=selection_type,
-        sim_type=sim_type,
+        sim_type=sim_type, sample_hyperparameters=sample_hyperparameters,
         outfile_name=os.path.join(
             out_dir, 'benchmark_{}.csv'.format(i)))
 

@@ -12,7 +12,9 @@ dynetlsm <- import("dynetlsm")
 sklearn <- import("sklearn")
 
 
-sim_type <- 'easy'
+# choose between easy and hard
+sim_type <- 'hard'
+#sim_type <- 'easy'
 out_dir <- paste0('results_sbm_', sim_type)
 if (!dir.exists(out_dir)) {
     dir.create(out_dir)
@@ -20,7 +22,7 @@ if (!dir.exists(out_dir)) {
 
 
 for (seed in 0:49) {
-    res <- dynetlsm$datasets$synthetic_static_community_dynamic_network(
+    res <- dynetlsm$datasets$homogeneous_simulation(
         n_time_steps=6L, n_nodes=120L, random_state=as.integer(seed),
          simulation_type = sim_type)
     Y <- res[[1]]

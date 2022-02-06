@@ -6,13 +6,14 @@ library(zeallot)
 # Set the path to the Python executable file
 use_python("~/.virtualenv/stat/bin/python", required = T)
 
-#source_python('~/myworkspace/dynetlsm/examples/test.py')
 
 dynetlsm <- import("dynetlsm")
 sklearn <- import("sklearn")
 
 
-sim_type <- 'easy'
+# choose between easy and hard
+sim_type <- 'hard'
+# sim_type <- 'easy'
 out_dir <- paste0('inhomo_results_sbm_', sim_type)
 if (!dir.exists(out_dir)) {
     dir.create(out_dir)
@@ -20,7 +21,7 @@ if (!dir.exists(out_dir)) {
 
 
 for (seed in 0:49) {
-    res <- dynetlsm$datasets$synthetic_dynamic_network(
+    res <- dynetlsm$datasets$inhomogeneous_simulation(
         n_time_steps=9L, n_nodes=120L, random_state=as.integer(seed),
         simulation_type = sim_type)
     Y <- res[[1]]

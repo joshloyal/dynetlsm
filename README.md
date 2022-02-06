@@ -14,17 +14,7 @@ blocked Metropolis-Hastings within Gibbs sampling.
 The primary method implemented in this package is the hierarchical Dirichlet
 process latent position cluster model (HDP-LPCM) described in
 "A Bayesian nonparametric latent space approach to modeling evolving communities in
-dynamic networks" [[arXiv:2003.07404](https://arxiv.org/abs/2003.07404)].
-
-BibTeX reference to cite, if you use this package:
-```bibtex
-@article{loyal2020hdplpcm,
-    title = {A Bayesian nonparametric latent space approach to modeling
-             evolving communities in dynamic networks},
-    author = {Loyal, Joshua Daniel and Chen, Yuguo},
-    journal = {arXiv preprint arXiv:2003.07404},
-    year = {2020},
-}
+dynamic networks".
 ```
 
 Dependencies
@@ -256,7 +246,7 @@ From this diagram, one can see that group 1 primarily splits off into group 3, w
 
 Simulation Studies and Real-Data Applications
 ---------------------------------------------
-This package includes the simulation studies and real-data applications found in Loyal and Chen (2020)<sup>[[6]](#References)</sup>:
+This package includes the simulation studies and real-data applications found in Loyal and Chen (2021)<sup>[[6]](#References)</sup>:
 
 * A synthetic dynamic network with a time-homogeneous community structure (HDP-LPCM + LPCM): ([here](/examples/homogeneous_simulation.py)).
 * A synthetic dynamic network with a time-homogeneous community structure (SBM): ([here](/examples/homogeneous_sbm.R)).
@@ -264,7 +254,7 @@ This package includes the simulation studies and real-data applications found in
 * A synthetic dynamic network with a time-inhomogeneous community structure (HDP-LPCM): ([here](/examples/inhomogeneous_simulation.py)).
 * A synthetic dynamic network with a time-inhomogeneous community structure (SBM): ([here](/examples/inhomogeneous_sbm.R)).
 * Quantify the HDP-LPCM's sensitivity to group seperation and stability: ([here](/examples/detection_limit.py)).
-* A synthetic dynamic network with a slowly merging group structure: ([here](/examples/slowly_merging.py))
+* A synthetic dynamic network with a slowly merging group structure: ([here](/examples/merging_communities.py))
 * Sampson's monastery network: ([here](/examples/sampson_monks.py)).
 * A dynamic network constructed from international military alliances during the first three decades of the Cold War (1950 - 1979): ([here](/examples/military_alliances.py)).
 * A dynamic network constructed from character interactions in the first four seasons of the Game of Thrones television series: ([here](/examples/GoT.py)).

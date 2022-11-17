@@ -4,7 +4,6 @@ import scipy.stats as stats
 from math import floor, ceil
 
 from statsmodels.regression.linear_model import yule_walker
-from arviz.stats.diagnostics import geweke
 
 
 def mean_detrend(x):
@@ -108,10 +107,7 @@ def geweke_diag(x, first=0.1, last=0.5, n_burn=None, corrected=True):
     if n_burn is not None:
         x = x[n_burn:]
 
-    if corrected:
-        z_score = geweke_corrected(x, first=first, last=last)
-    else:
-        z_score = geweke(x, intervals=1, first=first, last=last)[0, 1]
+    z_score = geweke_corrected(x, first=first, last=last)
 
     # calculate two-sided p-value
     p_val = 2 * (1 - stats.norm.cdf(np.abs(z_score)))
